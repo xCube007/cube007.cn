@@ -51,17 +51,27 @@ export function nowMs(): number {
 
 /**
  * 日期字符串 → 时间戳(秒和毫秒都给)。
- * 接受 "YYYY-MM-DD"、"YYYY-MM-DD HH:mm:ss" 或任何 Date 能解析的格式。
+ * 接受 "YYYY-MM-DD"、"YYYY-MM-DD HH:mm:ss"。
+ *
+ * 关键:显式按东八区(默认 tzHourOffset=8)解析,不依赖运行环境时区。
+ * 原因 —— new Date('YYYY-MM-DD HH:mm:ss') 在不同平台/时区对带空格格式
+ * 的解释不一致(UTC vs 本地),会让结果随服务器漂移。这里手动算 UTC 偏移,
+ * 和 timestampToDate 的默认时区对称。
  */
-export function dateToTimestamp(input: string): TsResult<{ seconds: number; ms: number }> {
+export function dateToTimestamp(
+  input: string,
+  tzHourOffset = 8
+): TsResult<{ seconds: number; ms: number }> {
   const trimmed = input.trim();
   if (trimmed === '') {
     return { ok: false, error: '输入为空' };
   }
-  const date = new Date(trimmed.replace(' ', 'T'));
-  if (isNaN(date.getTime())) {
+  // 标准化成 ISO 形式后按 UTC 解析,再减去时区偏移得到真实的 UTC 毫秒
+  const iso = trimmed.replace(' ', 'T');
+  const asUtc = Date.parse(iso + 'Z');
+  if (Number.isNaN(asUtc)) {
     return { ok: false, error: '无法解析日期,试试 YYYY-MM-DD 或 YYYY-MM-DD HH:mm:ss' };
   }
-  const ms = date.getTime();
+  const ms = asUtc - tzHourOffset * 3600_000;
   return { ok: true, output: { seconds: Math.floor(ms / 1000), ms } };
 }
