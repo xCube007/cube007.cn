@@ -1,0 +1,120 @@
+---
+import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import { timestampToDate, dateToTimestamp, nowSeconds, nowMs } from '../../../lib/tools/timestamp';
+void [timestampToDate, dateToTimestamp, nowSeconds, nowMs];
+---
+
+<BaseLayout title="时间戳转换" description="Unix 时间戳与日期互转,自动区分秒与毫秒。">
+  <section class="tool-head">
+    <a href="/tools/" class="tool-back">← 所有工具</a>
+    <h1 class="tool-title">时间戳转换</h1>
+    <p class="tool-desc">时间戳 ↔ 日期,自动区分秒/毫秒,默认东八区。</p>
+  </section>
+
+  <div class="tool">
+    <div class="ts__block">
+      <div class="ts__head">
+        <span class="ts__title">时间戳 → 日期</span>
+        <button type="button" id="ts-now" class="ts__tiny">填入当前</button>
+      </div>
+      <div class="ts__row">
+        <input id="ts-input" class="ts__input" type="text" placeholder="如 1700000000 或 1700000000000" />
+        <button type="button" id="ts-convert">转换</button>
+      </div>
+      <div id="ts-out" class="ts__result" aria-live="polite"></div>
+    </div>
+
+    <div class="ts__sep"></div>
+
+    <div class="ts__block">
+      <div class="ts__head"><span class="ts__title">日期 → 时间戳</span></div>
+      <div class="ts__row">
+        <input id="date-input" class="ts__input" type="text" placeholder="如 2023-11-15 06:13:20" />
+        <button type="button" id="date-convert">转换</button>
+      </div>
+      <div id="date-out" class="ts__result" aria-live="polite"></div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { timestampToDate, dateToTimestamp, nowSeconds, nowMs } from '../../../lib/tools/timestamp';
+
+  const tsInput = document.getElementById('ts-input') as HTMLInputElement;
+  const tsOut = document.getElementById('ts-out') as HTMLDivElement;
+  const dateInput = document.getElementById('date-input') as HTMLInputElement;
+  const dateOut = document.getElementById('date-out') as HTMLDivElement;
+
+  function setTs(html: string, ok: boolean) {
+    tsOut.innerHTML = html;
+    tsOut.className = 'ts__result ' + (ok ? 'ts__result--ok' : 'ts__result--err');
+  }
+  function setDate(html: string, ok: boolean) {
+    dateOut.innerHTML = html;
+    dateOut.className = 'ts__result ' + (ok ? 'ts__result--ok' : 'ts__result--err');
+  }
+
+  document.getElementById('ts-convert')!.addEventListener('click', () => {
+    const r = timestampToDate(Number(tsInput.value));
+    if (r.ok) {
+      setTs(`<div>${r.output} <span class="ts__tz">(东八区)</span></div>`, true);
+    } else {
+      setTs('✗ ' + r.error, false);
+    }
+  });
+
+  document.getElementById('ts-now')!.addEventListener('click', () => {
+    tsInput.value = String(nowSeconds());
+  });
+
+  document.getElementById('date-convert')!.addEventListener('click', () => {
+    const r = dateToTimestamp(dateInput.value);
+    if (r.ok) {
+      setDate(
+        `<div class="ts__pair"><span>秒</span><code>${r.output.seconds}</code></div>` +
+        `<div class="ts__pair"><span>毫秒</span><code>${r.output.ms}</code></div>`,
+        true
+      );
+    } else {
+      setDate('✗ ' + r.error, false);
+    }
+  });
+</script>
+
+<style>
+  .tool-head { margin-bottom: var(--sp-8); }
+  .tool-back { color: var(--text-2); font-size: var(--fs-sm); }
+  .tool-title { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); }
+  .tool-desc { color: var(--text-1); }
+  .tool { display: grid; gap: var(--sp-4); }
+
+  .ts__block { display: grid; gap: var(--sp-3); }
+  .ts__head { display: flex; align-items: center; justify-content: space-between; }
+  .ts__title { color: var(--text-1); font-family: var(--font-mono); font-size: var(--fs-sm); }
+  .ts__tiny { background: none; border: 1px solid var(--border); color: var(--text-2); font-size: var(--fs-xs); padding: var(--sp-1) var(--sp-2); border-radius: var(--radius-sm); cursor: pointer; }
+  .ts__tiny:hover { border-color: var(--accent); color: var(--accent); }
+
+  .ts__row { display: flex; gap: var(--sp-2); }
+  .ts__input {
+    flex: 1; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text-0); font-family: var(--font-mono); font-size: var(--fs-sm);
+    padding: var(--sp-2) var(--sp-3); outline: none; transition: border-color 0.15s ease;
+  }
+  .ts__input:focus { border-color: var(--accent); }
+  .ts__row button {
+    background: var(--bg-1); border: 1px solid var(--border); color: var(--text-0);
+    font-size: var(--fs-sm); padding: var(--sp-2) var(--sp-4); border-radius: var(--radius-sm); cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .ts__row button:hover { border-color: var(--accent); background: var(--bg-2); }
+
+  .ts__result { font-family: var(--font-mono); font-size: var(--fs-sm); min-height: 1.5rem; }
+  .ts__result--ok { color: var(--text-0); }
+  .ts__result--err { color: var(--err); }
+  .ts__tz { color: var(--text-2); }
+  .ts__pair { display: flex; gap: var(--sp-3); }
+  .ts__pair span { color: var(--text-2); min-width: 2.5rem; }
+  .ts__pair code { color: var(--accent-3); }
+
+  .ts__sep { height: 1px; background: var(--border); margin: var(--sp-2) 0; }
+</style>

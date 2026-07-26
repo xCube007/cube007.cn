@@ -1,0 +1,118 @@
+---
+import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import { encodeBase64, decodeBase64 } from '../../../lib/tools/base64';
+void [encodeBase64, decodeBase64];
+---
+
+<BaseLayout title="Base64 编解码" description="UTF-8 安全的 Base64 在线编解码,支持中文与 emoji。">
+  <section class="tool-head">
+    <a href="/tools/" class="tool-back">← 所有工具</a>
+    <h1 class="tool-title">Base64 编解码</h1>
+    <p class="tool-desc">UTF-8 安全,中文/emoji 不乱码。纯浏览器运行。</p>
+  </section>
+
+  <div class="tool">
+    <div class="tool__bar">
+      <div class="tool__actions">
+        <button type="button" data-action="encode">编码 →</button>
+        <button type="button" data-action="decode">← 解码</button>
+      </div>
+    </div>
+
+    <div class="b64__cols">
+      <div class="b64__col">
+        <label class="b64__label" for="b64-input">输入</label>
+        <textarea id="b64-input" class="tool__textarea" placeholder="输入文本或 Base64" spellcheck="false"></textarea>
+      </div>
+      <div class="b64__col">
+        <div class="b64__label-row">
+          <span class="b64__label">输出</span>
+          <copy-button id="copy-btn"></copy-button>
+        </div>
+        <textarea id="b64-output" class="tool__textarea" readonly placeholder="结果" spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    <p id="status" class="tool__status" role="status"></p>
+  </div>
+</BaseLayout>
+
+<script>
+  import '../../../components/tools/copy-button.ts';
+  import { encodeBase64, decodeBase64 } from '../../../lib/tools/base64';
+
+  const input = document.getElementById('b64-input') as HTMLTextAreaElement;
+  const output = document.getElementById('b64-output') as HTMLTextAreaElement;
+  const status = document.getElementById('status') as HTMLParagraphElement;
+  const copyBtn = document.getElementById('copy-btn') as any;
+
+  function showOk(text: string, msg: string) {
+    output.value = text;
+    status.textContent = msg;
+    status.className = 'tool__status tool__status--ok';
+    copyBtn.setValue(text);
+  }
+  function showErr(msg: string) {
+    status.textContent = '✗ ' + msg;
+    status.className = 'tool__status tool__status--err';
+    copyBtn.setValue('');
+  }
+
+  document.querySelector('.tool__actions')!.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('button');
+    if (!btn) return;
+    const value = input.value;
+    if (btn.dataset.action === 'encode') {
+      const r = encodeBase64(value);
+      r.ok ? showOk(r.output, '已编码') : showErr(r.error);
+    } else if (btn.dataset.action === 'decode') {
+      const r = decodeBase64(value);
+      r.ok ? showOk(r.output, '已解码') : showErr(r.error);
+    }
+  });
+</script>
+
+<style>
+  .tool-head { margin-bottom: var(--sp-8); }
+  .tool-back { color: var(--text-2); font-size: var(--fs-sm); }
+  .tool-title { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); }
+  .tool-desc { color: var(--text-1); }
+  .tool { display: grid; gap: var(--sp-4); }
+
+  .b64__cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+  .b64__col { display: grid; gap: var(--sp-2); }
+  .b64__label-row { display: flex; align-items: center; justify-content: space-between; }
+  .b64__label { color: var(--text-2); font-size: var(--fs-sm); font-family: var(--font-mono); }
+  .tool__textarea {
+    width: 100%; min-height: 200px; resize: vertical;
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text-0); font-family: var(--font-mono); font-size: var(--fs-sm);
+    padding: var(--sp-4); outline: none; transition: border-color 0.15s ease;
+  }
+  .tool__textarea:focus { border-color: var(--accent); }
+
+  .tool__bar { display: flex; align-items: center; gap: var(--sp-4); }
+  .tool__actions { display: flex; gap: var(--sp-2); }
+  .tool__actions button {
+    background: var(--bg-1); border: 1px solid var(--border); color: var(--text-0);
+    font-size: var(--fs-sm); padding: var(--sp-2) var(--sp-4); border-radius: var(--radius-sm);
+    cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .tool__actions button:hover { border-color: var(--accent); background: var(--bg-2); }
+
+  .tool__status { font-size: var(--fs-sm); font-family: var(--font-mono); min-height: 1.25rem; }
+  .tool__status--ok { color: var(--ok); }
+  .tool__status--err { color: var(--err); }
+
+  .b64__label-row :global(.tool-copy) {
+    background: var(--bg-1); border: 1px solid var(--border); color: var(--text-1);
+    font-size: var(--fs-xs); padding: var(--sp-1) var(--sp-3); border-radius: var(--radius-sm);
+    cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .b64__label-row :global(.tool-copy:hover:not(:disabled)) { border-color: var(--accent); color: var(--accent); }
+  .b64__label-row :global(.tool-copy:disabled) { opacity: 0.4; cursor: not-allowed; }
+
+  @media (max-width: 700px) {
+    .b64__cols { grid-template-columns: 1fr; }
+  }
+</style>

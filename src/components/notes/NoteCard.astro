@@ -1,0 +1,93 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  note: CollectionEntry<'notes'>;
+}
+
+const { note } = Astro.props;
+const { title, date, tags, description } = note.data;
+
+const dateStr = new Intl.DateTimeFormat('zh-CN', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(date);
+---
+
+<a href={`/notes/${note.id}/`} class="note-card">
+  <div class="note-card__date">{dateStr}</div>
+  <h3 class="note-card__title">{title}</h3>
+  {description && <p class="note-card__desc">{description}</p>}
+  {
+    tags.length > 0 && (
+      <ul class="note-card__tags">
+        {tags.map((t) => <li>#{t}</li>)}
+      </ul>
+    )
+  }
+</a>
+
+<style>
+  /* 流光描边卡片:hover 时边框流光,克制的一处流光点缀 */
+  .note-card {
+    position: relative;
+    display: block;
+    padding: var(--sp-6);
+    border-radius: var(--radius);
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    overflow: hidden;
+  }
+  .note-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--flow);
+    background-size: 200% auto;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    animation: flow-border 4s linear infinite;
+  }
+  .note-card:hover {
+    transform: translateY(-2px);
+    border-color: transparent;
+  }
+  .note-card:hover::before {
+    opacity: 1;
+  }
+
+  .note-card__date {
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+    margin-bottom: var(--sp-2);
+  }
+  .note-card__title {
+    font-size: var(--fs-xl);
+    color: var(--text-0);
+    margin-bottom: var(--sp-2);
+  }
+  .note-card__desc {
+    color: var(--text-1);
+    font-size: var(--fs-sm);
+    margin-bottom: var(--sp-3);
+  }
+  .note-card__tags {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+  }
+  .note-card__tags li {
+    color: var(--accent);
+    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+  }
+</style>

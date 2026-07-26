@@ -1,0 +1,259 @@
+---
+import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import { formatJson, minifyJson, validateJson } from '../../../lib/tools/json';
+
+// 引用一下确保 tree-shaking 不会丢,且让这一页的"逻辑来源"显式可追溯
+void [formatJson, minifyJson, validateJson];
+---
+
+<BaseLayout title="JSON 格式化" description="在线 JSON 格式化、压缩与校验工具。">
+  <section class="tool-head">
+    <a href="/tools/" class="tool-back">← 所有工具</a>
+    <h1 class="tool-title">JSON 格式化</h1>
+    <p class="tool-desc">格式化、压缩或校验 JSON。纯浏览器运行,数据不上传。</p>
+  </section>
+
+  <div class="tool">
+    <div class="tool__input-wrap">
+      <textarea
+        id="json-input"
+        class="tool__textarea"
+        placeholder='粘贴 JSON,如 {"name":"cube007","tags":["后端","AI"]}'
+        spellcheck="false"
+        autocomplete="off"
+      ></textarea>
+    </div>
+
+    <div class="tool__bar">
+      <div class="tool__actions">
+        <button type="button" data-action="format">格式化</button>
+        <button type="button" data-action="minify">压缩</button>
+        <button type="button" data-action="validate">校验</button>
+        <button type="button" data-action="clear" class="ghost">清空</button>
+      </div>
+      <label class="tool__indent">
+        缩进
+        <select id="indent">
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="0(tab)">Tab</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="tool__output-wrap">
+      <pre id="json-output" class="tool__output" aria-live="polite"></pre>
+      <copy-button id="copy-btn"></copy-button>
+    </div>
+
+    <p id="status" class="tool__status" role="status"></p>
+  </div>
+</BaseLayout>
+
+<script>
+  import '../../../components/tools/copy-button.ts';
+  import {
+    formatJson,
+    minifyJson,
+    validateJson,
+  } from '../../../lib/tools/json';
+
+  const input = document.getElementById('json-input') as HTMLTextAreaElement;
+  const output = document.getElementById('json-output') as HTMLPreElement;
+  const status = document.getElementById('status') as HTMLParagraphElement;
+  const copyBtn = document.getElementById('copy-btn') as any;
+  const indentSel = document.getElementById('indent') as HTMLSelectElement;
+
+  function indentValue(): number | string {
+    const v = indentSel.value;
+    if (v === '0(tab)') return '\t';
+    return parseInt(v, 10);
+  }
+
+  function showOk(text: string, msg: string) {
+    output.textContent = text;
+    output.classList.remove('err');
+    status.textContent = msg;
+    status.className = 'tool__status tool__status--ok';
+    copyBtn.setValue(text);
+  }
+
+  function showErr(msg: string) {
+    output.textContent = '';
+    status.textContent = '✗ ' + msg;
+    status.className = 'tool__status tool__status--err';
+    copyBtn.setValue('');
+  }
+
+  document.querySelector('.tool__actions')!.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('button');
+    if (!btn) return;
+    const action = btn.dataset.action;
+
+    if (action === 'clear') {
+      input.value = '';
+      output.textContent = '';
+      status.textContent = '';
+      status.className = 'tool__status';
+      copyBtn.setValue('');
+      return;
+    }
+
+    const value = input.value;
+    if (action === 'format') {
+      const r = formatJson(value, indentValue() as number);
+      r.ok ? showOk(r.output, '已格式化') : showErr(r.error);
+    } else if (action === 'minify') {
+      const r = minifyJson(value);
+      r.ok ? showOk(r.output, '已压缩') : showErr(r.error);
+    } else if (action === 'validate') {
+      const r = validateJson(value);
+      r.ok
+        ? showOk(JSON.stringify(r.output), '✓ 合法 JSON')
+        : showErr(r.error);
+    }
+  });
+</script>
+
+<style>
+  .tool-head {
+    margin-bottom: var(--sp-8);
+  }
+  .tool-back {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+  }
+  .tool-title {
+    font-size: var(--fs-2xl);
+    margin: var(--sp-4) 0 var(--sp-2);
+  }
+  .tool-desc {
+    color: var(--text-1);
+  }
+
+  .tool {
+    display: grid;
+    gap: var(--sp-4);
+  }
+  .tool__input-wrap,
+  .tool__output-wrap {
+    position: relative;
+  }
+  .tool__textarea {
+    width: 100%;
+    min-height: 200px;
+    resize: vertical;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-0);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    padding: var(--sp-4);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .tool__textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .tool__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+  }
+  .tool__actions {
+    display: flex;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+  }
+  .tool__actions button,
+  .tool__indent select {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    color: var(--text-0);
+    font-family: var(--font-sans);
+    font-size: var(--fs-sm);
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .tool__actions button:hover {
+    border-color: var(--accent);
+    background: var(--bg-2);
+  }
+  .tool__actions button.ghost {
+    color: var(--text-2);
+  }
+  .tool__indent {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+  }
+  .tool__indent select {
+    padding: var(--sp-1) var(--sp-2);
+  }
+
+  .tool__output-wrap {
+    min-height: 120px;
+  }
+  .tool__output {
+    width: 100%;
+    min-height: 200px;
+    max-height: 480px;
+    overflow: auto;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-0);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    padding: var(--sp-4);
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .tool__output.err {
+    border-color: var(--err);
+  }
+
+  /* 复制按钮浮在输出框右上角 */
+  .tool__output-wrap :global(.tool-copy) {
+    position: absolute;
+    top: var(--sp-3);
+    right: var(--sp-3);
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    color: var(--text-1);
+    font-size: var(--fs-xs);
+    padding: var(--sp-1) var(--sp-3);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .tool__output-wrap :global(.tool-copy:hover:not(:disabled)) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .tool__output-wrap :global(.tool-copy:disabled) {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .tool__status {
+    font-size: var(--fs-sm);
+    font-family: var(--font-mono);
+    min-height: 1.25rem;
+  }
+  .tool__status--ok {
+    color: var(--ok);
+  }
+  .tool__status--err {
+    color: var(--err);
+  }
+</style>

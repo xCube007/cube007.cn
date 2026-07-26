@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../../components/layout/BaseLayout.astro';
+import NoteCard from '../../components/notes/NoteCard.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const notes = await getCollection('notes', ({ data }) => !data.draft);
+  // 收集所有标签(去重)
+  const tags = new Set<string>();
+  for (const note of notes) {
+    for (const tag of note.data.tags) tags.add(tag);
+  }
+  return [...tags].map((tag) => ({
+    params: { tag },
+    props: {
+      tag,
+      notes: notes
+        .filter((n) => n.data.tags.includes(tag))
+        .sort((a, b) => b.data.date.getTime() - a.data.date.getTime()),
+    },
+  }));
+}
+
+const { tag, notes } = Astro.props;
+---
+
+<BaseLayout title={`#${tag}`} description={`标签「${tag}」下的所有笔记。`}>
+  <section class="head">
+    <a href="/tags/" class="back">← 所有标签</a>
+    <h1 class="title"><span class="flow-text">#{tag}</span></h1>
+    <p class="sub">{notes.length} 篇笔记</p>
+  </section>
+
+  <div class="grid">
+    {notes.map((note) => <NoteCard note={note} />)}
+  </div>
+</BaseLayout>
+
+<style>
+  .head { margin-bottom: var(--sp-8); }
+  .back { color: var(--text-2); font-size: var(--fs-sm); }
+  .title { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); font-family: var(--font-mono); }
+  .sub { color: var(--text-1); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--sp-4);
+  }
+</style>

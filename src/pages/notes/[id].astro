@@ -1,0 +1,134 @@
+---
+import BaseLayout from '../../components/layout/BaseLayout.astro';
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+
+export async function getStaticPaths() {
+  const notes = await getCollection('notes', ({ data }) => !data.draft);
+  return notes.map((note) => ({
+    params: { id: note.id },
+    props: { note },
+  }));
+}
+
+interface Props {
+  note: CollectionEntry<'notes'>;
+}
+
+const { note } = Astro.props;
+const { Content } = await render(note);
+const { title, date, tags, description } = note.data;
+
+const dateStr = new Intl.DateTimeFormat('zh-CN', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+}).format(date);
+---
+
+<BaseLayout title={title} description={description}>
+  <article class="note">
+    <a href="/" class="note__back">← 回笔记流</a>
+    <h1 class="note__title">{title}</h1>
+    <div class="note__meta">
+      <time>{dateStr}</time>
+      {
+        tags.length > 0 && (
+          <ul class="note__tags">
+            {tags.map((t) => (
+              <li><a href={`/tags/${t}/`}>#{t}</a></li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+    <div class="note__body">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .note {
+    max-width: var(--content-w);
+    margin: 0 auto;
+  }
+  .note__back {
+    display: inline-block;
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    margin-bottom: var(--sp-6);
+  }
+  .note__title {
+    font-size: var(--fs-2xl);
+    margin-bottom: var(--sp-3);
+  }
+  .note__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    margin-bottom: var(--sp-8);
+    padding-bottom: var(--sp-4);
+    border-bottom: 1px solid var(--border);
+  }
+  .note__tags {
+    list-style: none;
+    display: flex;
+    gap: var(--sp-3);
+  }
+  .note__tags li {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+  }
+
+  /* 笔记正文排版 */
+  .note__body :global(p) {
+    margin-bottom: var(--sp-4);
+    color: var(--text-0);
+  }
+  .note__body :global(h2) {
+    font-size: var(--fs-xl);
+    margin: var(--sp-8) 0 var(--sp-3);
+  }
+  .note__body :global(h3) {
+    font-size: var(--fs-lg);
+    margin: var(--sp-6) 0 var(--sp-2);
+  }
+  .note__body :global(ul),
+  .note__body :global(ol) {
+    margin: 0 0 var(--sp-4) var(--sp-6);
+    color: var(--text-0);
+  }
+  .note__body :global(li) {
+    margin-bottom: var(--sp-2);
+  }
+  .note__body :global(blockquote) {
+    border-left: 3px solid var(--accent);
+    padding: var(--sp-1) var(--sp-4);
+    margin: var(--sp-4) 0;
+    color: var(--text-1);
+    background: var(--bg-1);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  .note__body :global(code) {
+    background: var(--bg-2);
+    padding: 0.15em 0.4em;
+    border-radius: var(--radius-sm);
+    color: var(--accent-3);
+  }
+  .note__body :global(pre) {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--sp-4);
+    overflow-x: auto;
+    margin-bottom: var(--sp-4);
+  }
+  .note__body :global(pre code) {
+    background: none;
+    padding: 0;
+    color: var(--text-0);
+  }
+</style>

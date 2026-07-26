@@ -1,0 +1,87 @@
+---
+import BaseLayout from '../components/layout/BaseLayout.astro';
+import NoteCard from '../components/notes/NoteCard.astro';
+import { getCollection } from 'astro:content';
+
+// 时间流:按日期倒序,排除 draft
+const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+);
+---
+
+<BaseLayout>
+  <section class="hero">
+    <h1 class="hero__title">
+      <span class="flow-text">Cube007</span> 的学习笔记
+    </h1>
+    <p class="hero__sub">
+      记录后端与 AI 的学习过程,顺手放一些日常用得上的开发小工具。
+    </p>
+    <div class="hero__line"></div>
+  </section>
+
+  <section class="feed">
+    <h2 class="section-title">最新笔记</h2>
+    {
+      notes.length === 0 ? (
+        <p class="empty">还没有笔记,稍后再来。</p>
+      ) : (
+        <div class="feed__grid">
+          {notes.map((note) => <NoteCard note={note} />)}
+        </div>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    margin-bottom: var(--sp-12);
+  }
+  .hero__eyebrow {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: var(--sp-3);
+  }
+  .hero__title {
+    font-size: var(--fs-3xl);
+    margin-bottom: var(--sp-4);
+  }
+  .hero__sub {
+    color: var(--text-1);
+    font-size: var(--fs-lg);
+    max-width: 40ch;
+  }
+  /* 流光点缀:hero 下的呼吸光带 */
+  .hero__line {
+    margin-top: var(--sp-8);
+    height: 2px;
+    width: 100%;
+    background: var(--flow);
+    background-size: 200% auto;
+    border-radius: 2px;
+    animation: flow-line 5s ease-in-out infinite;
+  }
+
+  .section-title {
+    font-size: var(--fs-sm);
+    font-family: var(--font-mono);
+    color: var(--text-2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: var(--sp-6);
+  }
+
+  .feed__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--sp-4);
+  }
+
+  .empty {
+    color: var(--text-2);
+  }
+</style>

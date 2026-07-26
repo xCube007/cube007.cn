@@ -1,0 +1,142 @@
+---
+import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import { generateUuid, generatePassword } from '../../../lib/tools/uuid';
+void [generateUuid, generatePassword];
+---
+
+<BaseLayout title="UUID / 密码生成" description="生成 UUID v4 与可定制的随机密码。">
+  <section class="tool-head">
+    <a href="/tools/" class="tool-back">← 所有工具</a>
+    <h1 class="tool-title">UUID / 密码生成</h1>
+    <p class="tool-desc">UUID v4 用 crypto 真随机;密码可定制长度与字符集。</p>
+  </section>
+
+  <div class="tool">
+    <div class="uuid__block">
+      <div class="uuid__head">
+        <span class="uuid__title">UUID v4</span>
+        <div class="uuid__head-actions">
+          <copy-button id="uuid-copy"></copy-button>
+          <button type="button" id="uuid-gen">生成</button>
+        </div>
+      </div>
+      <code id="uuid-out" class="uuid__out"></code>
+    </div>
+
+    <div class="ts__sep"></div>
+
+    <div class="uuid__block">
+      <span class="uuid__title">密码</span>
+      <div class="pw__opts">
+        <label class="pw__len">
+          长度 <span id="pw-len-val">16</span>
+          <input id="pw-len" type="range" min="4" max="64" value="16" />
+        </label>
+        <div class="pw__sets">
+          <label><input type="checkbox" id="pw-lower" checked /> 小写 a-z</label>
+          <label><input type="checkbox" id="pw-upper" checked /> 大写 A-Z</label>
+          <label><input type="checkbox" id="pw-digits" checked /> 数字 0-9</label>
+          <label><input type="checkbox" id="pw-symbols" /> 符号</label>
+        </div>
+      </div>
+      <div class="uuid__head">
+        <code id="pw-out" class="uuid__out"></code>
+        <div class="uuid__head-actions">
+          <copy-button id="pw-copy"></copy-button>
+          <button type="button" id="pw-gen">生成</button>
+        </div>
+      </div>
+      <p id="pw-status" class="tool__status" role="status"></p>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import '../../../components/tools/copy-button.ts';
+  import { generateUuid, generatePassword } from '../../../lib/tools/uuid';
+
+  const uuidOut = document.getElementById('uuid-out') as HTMLElement;
+  const uuidCopy = document.getElementById('uuid-copy') as any;
+  const pwOut = document.getElementById('pw-out') as HTMLElement;
+  const pwCopy = document.getElementById('pw-copy') as any;
+  const pwLen = document.getElementById('pw-len') as HTMLInputElement;
+  const pwLenVal = document.getElementById('pw-len-val') as HTMLElement;
+  const pwStatus = document.getElementById('pw-status') as HTMLParagraphElement;
+
+  function genUuid() {
+    const v = generateUuid();
+    uuidOut.textContent = v;
+    uuidCopy.setValue(v);
+  }
+
+  function genPw() {
+    const opts = {
+      length: parseInt(pwLen.value, 10),
+      lower: (document.getElementById('pw-lower') as HTMLInputElement).checked,
+      upper: (document.getElementById('pw-upper') as HTMLInputElement).checked,
+      digits: (document.getElementById('pw-digits') as HTMLInputElement).checked,
+      symbols: (document.getElementById('pw-symbols') as HTMLInputElement).checked,
+    };
+    try {
+      const v = generatePassword(opts);
+      pwOut.textContent = v;
+      pwCopy.setValue(v);
+      pwStatus.textContent = '';
+      pwStatus.className = 'tool__status';
+    } catch (e) {
+      pwOut.textContent = '';
+      pwCopy.setValue('');
+      pwStatus.textContent = '✗ ' + (e as Error).message;
+      pwStatus.className = 'tool__status tool__status--err';
+    }
+  }
+
+  pwLen.addEventListener('input', () => { pwLenVal.textContent = pwLen.value; });
+  document.getElementById('uuid-gen')!.addEventListener('click', genUuid);
+  document.getElementById('pw-gen')!.addEventListener('click', genPw);
+
+  // 首次进入各生成一个
+  genUuid();
+  genPw();
+</script>
+
+<style>
+  .tool-head { margin-bottom: var(--sp-8); }
+  .tool-back { color: var(--text-2); font-size: var(--fs-sm); }
+  .tool-title { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); }
+  .tool-desc { color: var(--text-1); }
+  .tool { display: grid; gap: var(--sp-4); }
+
+  .uuid__block { display: grid; gap: var(--sp-3); }
+  .uuid__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+  .uuid__head-actions { display: flex; gap: var(--sp-2); align-items: center; }
+  .uuid__title { color: var(--text-1); font-family: var(--font-mono); font-size: var(--fs-sm); }
+  .uuid__out {
+    font-family: var(--font-mono); font-size: var(--fs-base); color: var(--accent-3);
+    word-break: break-all; flex: 1; background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: var(--sp-3); min-height: 2.4rem;
+    display: flex; align-items: center;
+  }
+
+  .pw__opts { display: grid; gap: var(--sp-3); }
+  .pw__len { display: flex; align-items: center; gap: var(--sp-3); color: var(--text-1); font-size: var(--fs-sm); }
+  .pw__len span { color: var(--accent); font-family: var(--font-mono); min-width: 1.5rem; }
+  .pw__len input { flex: 1; accent-color: var(--accent); }
+  .pw__sets { display: flex; flex-wrap: wrap; gap: var(--sp-4); }
+  .pw__sets label { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--text-1); font-size: var(--fs-sm); cursor: pointer; }
+  .pw__sets input { accent-color: var(--accent); }
+
+  .uuid__head-actions button,
+  .uuid__head-actions :global(.tool-copy) {
+    background: var(--bg-1); border: 1px solid var(--border); color: var(--text-0);
+    font-size: var(--fs-sm); padding: var(--sp-2) var(--sp-4); border-radius: var(--radius-sm);
+    cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .uuid__head-actions button:hover,
+  .uuid__head-actions :global(.tool-copy:hover:not(:disabled)) { border-color: var(--accent); background: var(--bg-2); }
+  .uuid__head-actions :global(.tool-copy:disabled) { opacity: 0.4; cursor: not-allowed; }
+
+  .ts__sep { height: 1px; background: var(--border); margin: var(--sp-2) 0; }
+  .tool__status { font-size: var(--fs-sm); font-family: var(--font-mono); min-height: 1.25rem; }
+  .tool__status--err { color: var(--err); }
+</style>

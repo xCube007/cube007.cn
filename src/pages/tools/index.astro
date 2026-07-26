@@ -1,0 +1,109 @@
+---
+import BaseLayout from '../../components/layout/BaseLayout.astro';
+
+// M1:工具索引页占位。M2 起,每个工具完成后在此登记一张卡片。
+// 用一个数组驱动渲染,以后加工具只改这里。
+const tools: { slug: string; name: string; desc: string; ready: boolean }[] = [
+  { slug: 'json-formatter', name: 'JSON 格式化', desc: '格式化 / 压缩 / 校验 JSON', ready: true },
+  { slug: 'base64', name: 'Base64 编解码', desc: 'UTF-8 安全的 Base64 互转', ready: true },
+  { slug: 'timestamp', name: '时间戳转换', desc: 'Unix 时间戳 ↔ 日期', ready: true },
+  { slug: 'uuid', name: 'UUID / 密码生成', desc: '生成 UUID v4 与随机密码', ready: true },
+];
+---
+
+<BaseLayout title="工具" description="Cube007 的开发小工具集合。">
+  <section class="hero">
+    <p class="hero__eyebrow">Dev Tools</p>
+    <h1 class="hero__title">开发小工具</h1>
+    <p class="hero__sub">纯前端、零上传、打开即用。</p>
+  </section>
+
+  <div class="tools-grid">
+    {
+      tools.map((t) =>
+        t.ready ? (
+          <a href={`/tools/${t.slug}/`} class="tool-card">
+            <h3 class="tool-card__name">{t.name}</h3>
+            <p class="tool-card__desc">{t.desc}</p>
+            <span class="tool-card__status tool-card__status--ready">可用</span>
+          </a>
+        ) : (
+          <div class="tool-card tool-card--soon">
+            <h3 class="tool-card__name">{t.name}</h3>
+            <p class="tool-card__desc">{t.desc}</p>
+            <span class="tool-card__status tool-card__status--soon">即将上线</span>
+          </div>
+        )
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .hero {
+    margin-bottom: var(--sp-12);
+  }
+  .hero__eyebrow {
+    color: var(--accent-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: var(--sp-3);
+  }
+  .hero__title {
+    font-size: var(--fs-3xl);
+    margin-bottom: var(--sp-4);
+  }
+  .hero__sub {
+    color: var(--text-1);
+    font-size: var(--fs-lg);
+  }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--sp-4);
+  }
+
+  .tool-card {
+    position: relative;
+    padding: var(--sp-6);
+    border-radius: var(--radius);
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    color: var(--text-0);
+    transition: transform 0.2s ease;
+  }
+  .tool-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+  }
+  .tool-card--soon {
+    opacity: 0.55;
+  }
+
+  .tool-card__name {
+    font-size: var(--fs-lg);
+    margin-bottom: var(--sp-2);
+  }
+  .tool-card__desc {
+    color: var(--text-1);
+    font-size: var(--fs-sm);
+    margin-bottom: var(--sp-4);
+  }
+  .tool-card__status {
+    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+    padding: var(--sp-1) var(--sp-2);
+    border-radius: var(--radius-sm);
+  }
+  .tool-card__status--ready {
+    color: var(--ok);
+    background: rgba(74, 222, 128, 0.1);
+  }
+  .tool-card__status--soon {
+    color: var(--text-2);
+    background: var(--bg-2);
+  }
+</style>

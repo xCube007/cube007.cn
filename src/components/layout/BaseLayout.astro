@@ -1,0 +1,139 @@
+---
+import '../../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const siteName = 'Cube007';
+const pageTitle = title ? `${title} · ${siteName}` : `${siteName} · 笔记与工具`;
+const desc = description ?? 'Cube007 的个人网站 —— 编程 / 后端 / AI 学习笔记,附开发小工具。';
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={desc} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a href="/" class="brand">
+          <span class="brand__mark">▮</span>
+          <span class="brand__name flow-text">{siteName}</span>
+        </a>
+        <nav class="nav">
+          <a href="/">笔记</a>
+          <a href="/tags">标签</a>
+          <a href="/tools">工具</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="site-main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <span>© {new Date().getFullYear()} {siteName}</span>
+        <span class="site-footer__dot">·</span>
+        <span>暗色流光 · Astro 驱动</span>
+      </div>
+    </footer>
+
+    <style>
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(7, 8, 12, 0.72);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+      }
+      .site-header__inner {
+        max-width: var(--wide-w);
+        margin: 0 auto;
+        padding: var(--sp-4) var(--sp-6);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sp-2);
+        font-weight: 700;
+        font-size: var(--fs-lg);
+        letter-spacing: -0.01em;
+        color: var(--text-0);
+      }
+      .brand:hover {
+        color: var(--text-0);
+      }
+      .brand__mark {
+        color: var(--accent);
+      }
+      .brand__name {
+        font-family: var(--font-mono);
+      }
+      .nav {
+        display: flex;
+        gap: var(--sp-6);
+      }
+      .nav a {
+        color: var(--text-1);
+        font-size: var(--fs-sm);
+        font-weight: 500;
+        padding: var(--sp-1) 0;
+        border-bottom: 2px solid transparent;
+        transition: color 0.15s ease, border-color 0.15s ease;
+      }
+      .nav a:hover {
+        color: var(--text-0);
+        border-bottom-color: var(--accent);
+      }
+
+      .site-main {
+        max-width: var(--wide-w);
+        margin: 0 auto;
+        padding: var(--sp-12) var(--sp-6);
+        min-height: calc(100vh - 200px);
+      }
+
+      .site-footer {
+        border-top: 1px solid var(--border);
+        margin-top: var(--sp-20);
+      }
+      .site-footer__inner {
+        max-width: var(--wide-w);
+        margin: 0 auto;
+        padding: var(--sp-6);
+        display: flex;
+        gap: var(--sp-2);
+        flex-wrap: wrap;
+        color: var(--text-2);
+        font-size: var(--fs-sm);
+      }
+      .site-footer__dot {
+        opacity: 0.5;
+      }
+
+      @media (max-width: 600px) {
+        .site-header__inner,
+        .site-main,
+        .site-footer__inner {
+          padding-left: var(--sp-4);
+          padding-right: var(--sp-4);
+        }
+      }
+    </style>
+  </body>
+</html>
