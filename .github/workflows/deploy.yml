@@ -1,0 +1,69 @@
+# 自动部署:push 到 main → build → 同步 dist/ 到宝塔服务器
+# 需要在 GitHub 仓库 Settings → Secrets and variables → Actions 配置以下 Secrets:
+#   SSH_HOST     服务器公网 IP        (如 43.138.10.176)
+#   SSH_USER     SSH 用户名           (如 root)
+#   SSH_PORT     SSH 端口             (如 22)
+#   SSH_PASSWORD 服务器登录密码
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # 支持手动触发,方便首次测试
+  workflow_dispatch:
+
+# 同时只跑一个部署,避免互相覆盖
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 跑单元测试
+        run: npm test
+
+      - name: 构建
+        run: npm run build
+
+      # 把 dist/ 打成 tar,scp 上传到服务器临时目录
+      - name: 打包 dist
+        run: tar -czf dist.tar.gz -C dist .
+
+      - name: 上传压缩包到服务器
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          source: dist.tar.gz
+          target: /tmp/cube007-deploy
+
+      # 在服务器上:清空站点目录(保留目录本身)→ 解压新文件 → 删临时包
+      - name: 服务器端解压部署
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: |
+            mkdir -p /www/wwwroot/cube007.cn
+            find /www/wwwroot/cube007.cn -mindepth 1 -delete
+            tar -xzf /tmp/cube007-deploy/dist.tar.gz -C /www/wwwroot/cube007.cn
+            rm -rf /tmp/cube007-deploy
+            echo "Deployed at $(date)"
