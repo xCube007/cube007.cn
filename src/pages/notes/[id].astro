@@ -2,22 +2,42 @@
 import BaseLayout from '../../components/layout/BaseLayout.astro';
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import { estimateReadingMinutes } from '../../lib/reading-time';
+import { extractToc } from '../../lib/toc';
 
 export async function getStaticPaths() {
-  const notes = await getCollection('notes', ({ data }) => !data.draft);
-  return notes.map((note) => ({
-    params: { id: note.id },
-    props: { note },
-  }));
+  const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.date.getTime() - a.data.date.getTime()
+  );
+
+  return notes.map((note, i) => {
+    const newer = i > 0 ? notes[i - 1] : null;
+    const older = i < notes.length - 1 ? notes[i + 1] : null;
+    return {
+      params: { id: note.id },
+      props: {
+        note,
+        prev: older
+          ? { id: older.id, title: older.data.title }
+          : null,
+        next: newer
+          ? { id: newer.id, title: newer.data.title }
+          : null,
+      },
+    };
+  });
 }
 
 interface Props {
   note: CollectionEntry<'notes'>;
+  prev: { id: string; title: string } | null;
+  next: { id: string; title: string } | null;
 }
 
-const { note } = Astro.props;
+const { note, prev, next } = Astro.props;
 const { Content } = await render(note);
 const { title, date, tags, description } = note.data;
+const body = typeof note.body === 'string' ? note.body : '';
+const toc = extractToc(body);
 
 const dateStr = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric',
@@ -25,18 +45,14 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
   day: 'numeric',
 }).format(date);
 
-const minutes = estimateReadingMinutes(
-  [title, description ?? '', typeof note.body === 'string' ? note.body : ''].join('\n')
-);
+const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n'));
 ---
 
 <BaseLayout title={title} description={description}>
   <article class="note">
     <a href="/" class="note__back">← 回笔记流</a>
     <h1 class="note__title">{title}</h1>
-    {
-      description && <p class="note__lead">{description}</p>
-    }
+    {description && <p class="note__lead">{description}</p>}
     <div class="note__meta">
       <time datetime={date.toISOString()}>{dateStr}</time>
       <span class="note__sep">·</span>
@@ -53,11 +69,58 @@ const minutes = estimateReadingMinutes(
         )
       }
     </div>
+
+    {
+      toc.length > 1 && (
+        <nav class="note__toc" aria-label="目录">
+          <div class="note__toc-title">目录</div>
+          <ol>
+            {toc.map((item) => (
+              <li>
+                <a href={`#${item.id}`}>{item.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+
     <div class="note__body">
       <Content />
     </div>
+
+    <nav class="note__pager" aria-label="相邻笔记">
+      {
+        prev ? (
+          <a class="pager__item pager__item--prev" href={`/notes/${prev.id}/`}>
+            <span class="pager__label">上一篇</span>
+            <span class="pager__title">{prev.title}</span>
+          </a>
+        ) : (
+          <span class="pager__item pager__item--empty" />
+        )
+      }
+      {
+        next ? (
+          <a class="pager__item pager__item--next" href={`/notes/${next.id}/`}>
+            <span class="pager__label">下一篇</span>
+            <span class="pager__title">{next.title}</span>
+          </a>
+        ) : (
+          <span class="pager__item pager__item--empty" />
+        )
+      }
+    </nav>
   </article>
 </BaseLayout>
+
+<script define:vars={{ toc }}>
+  // 给正文 h2 补 id,方便目录锚点跳转
+  const headings = document.querySelectorAll('.note__body h2');
+  headings.forEach((h, i) => {
+    if (!h.id && toc[i]) h.id = toc[i].id;
+  });
+</script>
 
 <script>
   import { enhanceCodeBlocks } from '../../components/notes/code-copy';
@@ -93,13 +156,11 @@ const minutes = estimateReadingMinutes(
     gap: var(--sp-3);
     color: var(--text-2);
     font-size: var(--fs-sm);
-    margin-bottom: var(--sp-8);
+    margin-bottom: var(--sp-6);
     padding-bottom: var(--sp-4);
     border-bottom: 1px solid var(--border);
   }
-  .note__sep {
-    opacity: 0.5;
-  }
+  .note__sep { opacity: 0.5; }
   .note__tags {
     list-style: none;
     display: flex;
@@ -116,9 +177,33 @@ const minutes = estimateReadingMinutes(
     background: rgba(109, 139, 255, 0.08);
     border: 1px solid rgba(109, 139, 255, 0.18);
   }
-  .note__tags a:hover {
-    border-color: var(--accent);
+  .note__tags a:hover { border-color: var(--accent); }
+
+  .note__toc {
+    margin-bottom: var(--sp-8);
+    padding: var(--sp-4) var(--sp-5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-1);
   }
+  .note__toc-title {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--text-2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: var(--sp-3);
+  }
+  .note__toc ol {
+    list-style: none;
+    display: grid;
+    gap: var(--sp-2);
+  }
+  .note__toc a {
+    color: var(--text-1);
+    font-size: var(--fs-sm);
+  }
+  .note__toc a:hover { color: var(--accent); }
 
   .note__body {
     font-size: 1.05rem;
@@ -130,8 +215,9 @@ const minutes = estimateReadingMinutes(
   }
   .note__body :global(h2) {
     font-size: var(--fs-xl);
-    margin: var(--sp-10, 2.5rem) 0 var(--sp-3);
+    margin: var(--sp-10) 0 var(--sp-3);
     padding-top: var(--sp-2);
+    scroll-margin-top: 5rem;
   }
   .note__body :global(h3) {
     font-size: var(--fs-lg);
@@ -142,9 +228,7 @@ const minutes = estimateReadingMinutes(
     margin: 0 0 var(--sp-4) var(--sp-6);
     color: var(--text-0);
   }
-  .note__body :global(li) {
-    margin-bottom: var(--sp-2);
-  }
+  .note__body :global(li) { margin-bottom: var(--sp-2); }
   .note__body :global(blockquote) {
     border-left: 3px solid var(--accent);
     padding: var(--sp-3) var(--sp-4);
@@ -191,16 +275,12 @@ const minutes = estimateReadingMinutes(
     transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
   .note__body :global(.code-block:hover .code-block__copy),
-  .note__body :global(.code-block__copy:focus) {
-    opacity: 1;
-  }
+  .note__body :global(.code-block__copy:focus) { opacity: 1; }
   .note__body :global(.code-block__copy:hover) {
     border-color: var(--accent);
     color: var(--accent);
   }
-  .note__body :global(a) {
-    text-underline-offset: 0.15em;
-  }
+  .note__body :global(a) { text-underline-offset: 0.15em; }
   .note__body :global(hr) {
     border: 0;
     border-top: 1px solid var(--border);
@@ -220,5 +300,50 @@ const minutes = estimateReadingMinutes(
   .note__body :global(th) {
     background: var(--bg-1);
     text-align: left;
+  }
+
+  .note__pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-3);
+    margin-top: var(--sp-12);
+    padding-top: var(--sp-6);
+    border-top: 1px solid var(--border);
+  }
+  .pager__item {
+    display: grid;
+    gap: var(--sp-1);
+    padding: var(--sp-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-1);
+    color: var(--text-0);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+    min-height: 4.5rem;
+  }
+  .pager__item:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    color: var(--text-0);
+  }
+  .pager__item--next { text-align: right; }
+  .pager__item--empty {
+    border: 0;
+    background: transparent;
+    min-height: 0;
+  }
+  .pager__label {
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+  }
+  .pager__title {
+    font-size: var(--fs-sm);
+    line-height: 1.4;
+  }
+
+  @media (max-width: 600px) {
+    .note__pager { grid-template-columns: 1fr; }
+    .pager__item--next { text-align: left; }
   }
 </style>

@@ -1,0 +1,182 @@
+---
+import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import { testRegex } from '../../../lib/tools/regex';
+void testRegex;
+---
+
+<BaseLayout title="正则测试" description="在线正则表达式测试,支持 flags 与捕获组。">
+  <section class="tool-head">
+    <a href="/tools/" class="tool-back">← 所有工具</a>
+    <h1 class="tool-title">正则测试</h1>
+    <p class="tool-desc">输入 pattern 与文本,查看全部匹配与捕获组。纯浏览器运行。</p>
+  </section>
+
+  <div class="tool">
+    <div class="re__pattern">
+      <span class="re__slash">/</span>
+      <input id="pattern" class="re__input" type="text" placeholder="\\d+" spellcheck="false" autocomplete="off" />
+      <span class="re__slash">/</span>
+      <input id="flags" class="re__flags" type="text" value="g" placeholder="gim" spellcheck="false" autocomplete="off" />
+    </div>
+
+    <label class="re__label" for="text">测试文本</label>
+    <textarea id="text" class="tool__textarea" placeholder="在这里粘贴要匹配的文本" spellcheck="false"></textarea>
+
+    <div class="tool__bar">
+      <button type="button" id="run">测试</button>
+      <button type="button" id="clear" class="ghost">清空</button>
+    </div>
+
+    <p id="status" class="tool__status" role="status"></p>
+    <div id="results" class="re__results" aria-live="polite"></div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { testRegex } from '../../../lib/tools/regex';
+
+  const patternEl = document.getElementById('pattern') as HTMLInputElement;
+  const flagsEl = document.getElementById('flags') as HTMLInputElement;
+  const textEl = document.getElementById('text') as HTMLTextAreaElement;
+  const status = document.getElementById('status') as HTMLParagraphElement;
+  const results = document.getElementById('results') as HTMLDivElement;
+
+  function escapeHtml(s: string): string {
+    return s
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;');
+  }
+
+  function run() {
+    const r = testRegex(patternEl.value, flagsEl.value, textEl.value);
+    if (!r.ok) {
+      status.textContent = '✗ ' + r.error;
+      status.className = 'tool__status tool__status--err';
+      results.innerHTML = '';
+      return;
+    }
+    status.textContent = r.count === 0 ? '无匹配' : `匹配 ${r.count} 处`;
+    status.className = 'tool__status tool__status--ok';
+    results.innerHTML = r.matches
+      .map(
+        (m, i) => `
+      <div class="re__item">
+        <div class="re__item-head">#${i + 1} · index ${m.index}</div>
+        <code class="re__match">${escapeHtml(m.match)}</code>
+        ${
+          m.groups.length
+            ? `<div class="re__groups">${m.groups
+                .map((g, gi) => `<span>$${gi + 1}=<code>${escapeHtml(g ?? '')}</code></span>`)
+                .join('')}</div>`
+            : ''
+        }
+      </div>`
+      )
+      .join('');
+  }
+
+  document.getElementById('run')!.addEventListener('click', run);
+  document.getElementById('clear')!.addEventListener('click', () => {
+    patternEl.value = '';
+    flagsEl.value = 'g';
+    textEl.value = '';
+    status.textContent = '';
+    status.className = 'tool__status';
+    results.innerHTML = '';
+  });
+
+  // Enter 在 pattern/flags 上直接跑
+  [patternEl, flagsEl].forEach((el) => {
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') run();
+    });
+  });
+</script>
+
+<style>
+  .tool-head { margin-bottom: var(--sp-8); }
+  .tool-back { color: var(--text-2); font-size: var(--fs-sm); }
+  .tool-title { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); }
+  .tool-desc { color: var(--text-1); }
+  .tool { display: grid; gap: var(--sp-3); }
+
+  .re__pattern {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--sp-2) var(--sp-3);
+  }
+  .re__slash { color: var(--text-2); font-family: var(--font-mono); }
+  .re__input,
+  .re__flags {
+    background: transparent;
+    border: 0;
+    color: var(--text-0);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    outline: none;
+  }
+  .re__input { flex: 1; min-width: 0; }
+  .re__flags { width: 4.5rem; color: var(--accent-3); }
+
+  .re__label {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    font-family: var(--font-mono);
+  }
+  .tool__textarea {
+    width: 100%; min-height: 160px; resize: vertical;
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text-0); font-family: var(--font-mono); font-size: var(--fs-sm);
+    padding: var(--sp-4); outline: none; transition: border-color 0.15s ease;
+  }
+  .tool__textarea:focus { border-color: var(--accent); }
+
+  .tool__bar { display: flex; gap: var(--sp-2); }
+  .tool__bar button {
+    background: var(--bg-1); border: 1px solid var(--border); color: var(--text-0);
+    font-size: var(--fs-sm); padding: var(--sp-2) var(--sp-4); border-radius: var(--radius-sm);
+    cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .tool__bar button:hover { border-color: var(--accent); background: var(--bg-2); }
+  .tool__bar button.ghost { color: var(--text-2); }
+
+  .tool__status { font-size: var(--fs-sm); font-family: var(--font-mono); min-height: 1.25rem; }
+  .tool__status--ok { color: var(--ok); }
+  .tool__status--err { color: var(--err); }
+
+  .re__results { display: grid; gap: var(--sp-3); }
+  .re__item {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--sp-3) var(--sp-4);
+  }
+  .re__item-head {
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    margin-bottom: var(--sp-2);
+  }
+  .re__match {
+    display: block;
+    color: var(--accent-3);
+    font-family: var(--font-mono);
+    word-break: break-all;
+  }
+  .re__groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+    margin-top: var(--sp-2);
+    color: var(--text-1);
+    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+  }
+  .re__groups code { color: var(--text-0); }
+</style>

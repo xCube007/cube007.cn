@@ -1,0 +1,88 @@
+---
+import BaseLayout from '../components/layout/BaseLayout.astro';
+---
+
+<BaseLayout title="关于" description="关于 Cube007 与这个站点。">
+  <section class="about">
+    <p class="about__eyebrow">About</p>
+    <h1 class="about__title">关于 Cube007</h1>
+    <p class="about__lead">
+      这里是我的学习笔记与开发小工具站。内容围绕编程、后端和 AI,工具都是纯前端、打开即用。
+    </p>
+
+    <div class="about__grid">
+      <article class="about__card">
+        <h2>这个站是什么</h2>
+        <p>
+          一个纯静态个人站:Markdown 写笔记,Git 即发布,GitHub Actions 自动部署到自己的服务器。
+          不追求大而全,只把日常真正会用到的东西放进来。
+        </p>
+      </article>
+      <article class="about__card">
+        <h2>技术选择</h2>
+        <ul>
+          <li>Astro 静态生成,默认零 JS</li>
+          <li>工具逻辑与界面分离,Vitest 单测</li>
+          <li>暗色流光视觉,设计 token 单点定义</li>
+        </ul>
+      </article>
+      <article class="about__card">
+        <h2>入口</h2>
+        <ul>
+          <li><a href="/">笔记时间流</a></li>
+          <li><a href="/tools/">开发小工具</a></li>
+          <li><a href="/search/">搜索笔记</a></li>
+          <li><a href="/rss.xml">RSS 订阅</a></li>
+          <li><a href="https://github.com/xCube007/cube007.cn" target="_blank" rel="noreferrer">GitHub 仓库</a></li>
+        </ul>
+      </article>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .about {
+    max-width: 48rem;
+  }
+  .about__eyebrow {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: var(--sp-3);
+  }
+  .about__title {
+    font-size: var(--fs-3xl);
+    margin-bottom: var(--sp-4);
+  }
+  .about__lead {
+    color: var(--text-1);
+    font-size: var(--fs-lg);
+    margin-bottom: var(--sp-8);
+    max-width: 42ch;
+  }
+  .about__grid {
+    display: grid;
+    gap: var(--sp-4);
+  }
+  .about__card {
+    padding: var(--sp-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-1);
+  }
+  .about__card h2 {
+    font-size: var(--fs-lg);
+    margin-bottom: var(--sp-3);
+  }
+  .about__card p,
+  .about__card li {
+    color: var(--text-1);
+  }
+  .about__card ul {
+    list-style: none;
+    display: grid;
+    gap: var(--sp-2);
+  }
+</style>
