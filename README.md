@@ -118,8 +118,41 @@ draft: true
 
 笔记页底部会按**共享标签**推荐相关笔记。
 
+## 在线写作后台(管理员)
+
+入口:[https://cube007.cn/admin/](https://cube007.cn/admin/)
+
+技术选型:**Sveltia CMS + GitHub 后端 + 自建 OAuth 代理**。
+
+- 登录:GitHub OAuth,仅允许名单用户(默认 `xCube007`)
+- 保存文章 = commit 到 `main` 的 `src/content/notes/`
+- 随后 GitHub Actions 自动 build + 部署,草稿(`draft: true`)仍不会出现在生产站
+
+### 一次性配置(约 15 分钟)
+
+1. **GitHub OAuth App**  
+   https://github.com/settings/developers → New OAuth App  
+   - Homepage: `https://cube007.cn`  
+   - Callback: `https://oauth.cube007.cn/callback`
+
+2. **部署 OAuth 代理**  
+   详见 [`oauth-proxy/README.md`](oauth-proxy/README.md)。  
+   把 `oauth-proxy/` 丢到宝塔 Node 项目,配环境变量,Nginx 反代 `oauth.cube007.cn` → `127.0.0.1:8787`。
+
+3. **确认 CMS 配置**  
+   [`public/admin/config.yml`](public/admin/config.yml) 里 `backend.base_url` 指向你的代理域名。
+
+### 日常写作
+
+1. 打开 `/admin/` → Login with GitHub  
+2. 新建笔记 / 编辑已有笔记  
+3. 草稿开关:开着 = 仓库里有文件但线上不展示;关掉后下次部署即发布  
+4. Save → 等 1–2 分钟 Actions 跑完 → 线上更新  
+
+本地命令行写作(`npm run new:note`)仍然可用,两套流程并存。
+
 ## 设计约定
 
 - **逻辑与界面分离**:每个工具的计算逻辑是 `src/lib/tools/` 下的纯函数,UI 只管调用与渲染,逻辑可单测。
 - **设计 token 单点定义**:颜色、流光动画、间距只在 `global.css` 定义,组件只引用 `var(--xxx)`,不内联写死。
-- **零运行时后端**:所有计算在浏览器完成。
+- **前台零运行时后端**:访客侧全是静态文件;仅管理员写作走 GitHub API + 独立 OAuth 代理。

@@ -1,0 +1,13 @@
+{
+  "name": "cube007-oauth-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal GitHub OAuth proxy for Sveltia/Decap CMS admin",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

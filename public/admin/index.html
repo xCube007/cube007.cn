@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Cube007 写作后台</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #07080c;
+        color: #e8ecf5;
+        font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC",
+          "Microsoft YaHei", sans-serif;
+      }
+      .boot {
+        max-width: 36rem;
+        margin: 20vh auto 0;
+        padding: 0 1.25rem;
+        text-align: center;
+      }
+      .boot h1 {
+        font-size: 1.25rem;
+        font-weight: 650;
+        margin: 0 0 0.75rem;
+      }
+      .boot p {
+        color: #a8b0c4;
+        line-height: 1.6;
+        margin: 0;
+      }
+      .boot code {
+        font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+        color: #5ff0e0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="boot" id="boot">
+      <h1>Cube007 写作后台</h1>
+      <p>
+        正在加载 Sveltia CMS… 若长时间无响应,请确认
+        <code>/admin/config.yml</code> 与 OAuth 代理已配置。
+      </p>
+    </div>
+    <!--
+      Sveltia CMS:Decap 兼容的现代后台。
+      用 GitHub 后端 + 自建 OAuth 代理,登录后可在线新建/编辑/发布笔记。
+      文档: https://github.com/sveltia/sveltia-cms
+    -->
+    <script src="https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js"></script>
+    <script>
+      // CMS 接管页面后隐藏启动提示
+      window.addEventListener('load', () => {
+        const boot = document.getElementById('boot');
+        if (boot) {
+          window.setTimeout(() => {
+            // 若 CMS 已注入根节点则移除 boot
+            if (document.getElementById('nc-root') || document.querySelector('[data-svelte-h]')) {
+              boot.remove();
+            }
+          }, 1500);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -17,6 +17,7 @@ Cube007 的个人网站:博客(编程/后端/AI 学习笔记)+ 开发小工具,�
 | 视觉 | 暗色主题,简约流光科技感,流光仅作点缀 | 个性鲜明但不抢内容注意力 |
 | 首发工具 | JSON 格式化/压缩/校验、Base64 编解码、时间戳转换、UUID/密码生成 | 高频、低风险、能验证工具架构跑通 |
 | 托管 | 宝塔 + Nginx + GitHub Actions 自动部署 | 已有 VPS,push main 后 CI 构建并 scp 到 `/www/wwwroot/cube007.cn` |
+| 在线写作 | Sveltia CMS(`/admin/`) + GitHub OAuth 代理 | 管理员 GitHub 登录后在网页写 Markdown,commit 到仓库再由 Actions 部署;前台仍静态 |
 
 ## 领域语言
 
@@ -67,13 +68,11 @@ src/
 - 流光效果:渐变描边 + 微动 keyframes,克制。
 - 代码块语法高亮适配暗色。
 
-## 非目标(首版明确不做)
+## 非目标
 
-- 不做后端、不做数据库、不做登录、不做评论。
-- 不做全文搜索(可作 v2)。
-- 不做工具的数据持久化(暂只用 localStorage,甚至首版可不做)。
-- 不做移动端深度定制(响应式即可,但不为移动端单独设计交互)。
-- 不做 RSS/SEO 精调(v2)。
+- 不做访客登录/评论/数据库 CMS(写作走 Git,不是传统后台库)。
+- 不做工具的服务端计算或密钥托管。
+- 不做移动端深度定制(响应式即可)。
 
 ## 里程碑
 
@@ -93,7 +92,17 @@ src/
   - `error_page 404 /404.html;`
 - 域名 `cube007.cn` 指向服务器公网 IP,SSL 用宝塔 Let's Encrypt
 
+## 在线写作后台
+
+- 入口: `/admin/`(Sveltia CMS,静态托管)
+- 配置: `public/admin/config.yml` → GitHub repo `xCube007/cube007.cn`
+- OAuth 代理: `oauth-proxy/`(独立 Node 进程,不进静态 dist)
+  - 建议子域 `oauth.cube007.cn` 反代到 `127.0.0.1:8787`
+  - 环境变量: `OAUTH_CLIENT_ID` / `OAUTH_CLIENT_SECRET` / `OAUTH_ALLOWED_USERS=xCube007`
+- 发布路径: CMS Save → GitHub commit → Actions 构建部署
+- 草稿: frontmatter `draft: true` 时生产构建排除
+
 ## 待定问题
 
 - 是否从密码 SSH 切到密钥认证(更稳妥)。
-- DNS / HTTPS 是否已最终生效。
+- OAuth 代理是否已在宝塔上线并完成 GitHub App 回调联调。

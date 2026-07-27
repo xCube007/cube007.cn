@@ -1,0 +1,88 @@
+# Sveltia CMS 配置(兼容 Decap CMS 配置格式)
+# 后台入口: /admin/
+# 登录: GitHub OAuth(需自建 oauth-proxy,见 oauth-proxy/ 与 README)
+
+backend:
+  name: github
+  repo: xCube007/cube007.cn
+  branch: main
+  # OAuth 代理根地址 —— 部署 oauth-proxy 后改成你的实际域名
+  # 例: https://oauth.cube007.cn  或  https://cube007.cn:8787
+  base_url: https://oauth.cube007.cn
+  auth_endpoint: auth
+  # 只允许这个 GitHub 用户登录写库(再加一层保险;仓库权限本身也限制)
+  # Sveltia/Decap 侧主要靠 GitHub 仓库写权限控制
+
+# 图片等媒体(可选,笔记里插图时用)
+media_folder: public/uploads
+public_folder: /uploads
+
+# 站点 URL,用于预览链接
+site_url: https://cube007.cn
+display_url: https://cube007.cn
+logo_url: /favicon.svg
+
+locale: zh_Hans
+
+slug:
+  encoding: unicode
+  clean_accents: false
+  sanitize_replacement: '-'
+
+collections:
+  - name: notes
+    label: 笔记
+    label_singular: 笔记
+    folder: src/content/notes
+    create: true
+    delete: true
+    extension: md
+    format: frontmatter
+    slug: '{{slug}}'
+    summary: '{{title}} · {{date}}'
+    sortable_fields:
+      fields: ['title', 'date', 'draft']
+      default:
+        field: date
+        direction: descending
+    view_filters:
+      - label: 仅草稿
+        field: draft
+        pattern: true
+      - label: 已发布
+        field: draft
+        pattern: false
+    fields:
+      - label: 标题
+        name: title
+        widget: string
+        required: true
+      - label: 日期
+        name: date
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+        required: true
+      - label: 标签
+        name: tags
+        widget: list
+        allow_add: true
+        required: false
+        default: []
+        hint: 例如 编程 / 后端 / AI
+      - label: 摘要
+        name: description
+        widget: string
+        required: false
+        hint: 一句话,出现在列表和搜索里
+      - label: 草稿
+        name: draft
+        widget: boolean
+        default: true
+        hint: 打开=仅本地/未发布;关闭后 commit 上线即发布
+      - label: 正文
+        name: body
+        widget: markdown
+        required: true
+        hint: Markdown 正文
