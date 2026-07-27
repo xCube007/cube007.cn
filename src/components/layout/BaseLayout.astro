@@ -34,6 +34,12 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={desc} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="Cube007 学习笔记"
+      href="/rss.xml"
+    />
     <title>{pageTitle}</title>
   </head>
   <body>
@@ -47,6 +53,7 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
           <a href="/">笔记</a>
           <a href="/tags">标签</a>
           <a href="/tools">工具</a>
+          <a href="/search">搜索</a>
         </nav>
       </div>
     </header>
@@ -60,6 +67,10 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
         <span>© {new Date().getFullYear()} {siteName}</span>
         <span class="site-footer__dot">·</span>
         <span>暗色流光 · Astro 驱动</span>
+        <span class="site-footer__dot">·</span>
+        <a href="/rss.xml">RSS</a>
+        <span class="site-footer__dot">·</span>
+        <a href="/search/">搜索</a>
       </div>
     </footer>
 
@@ -100,7 +111,9 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
       }
       .nav {
         display: flex;
-        gap: var(--sp-6);
+        gap: var(--sp-5);
+        flex-wrap: wrap;
+        justify-content: flex-end;
       }
       .nav a {
         color: var(--text-1);
@@ -113,6 +126,12 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
       .nav a:hover {
         color: var(--text-0);
         border-bottom-color: var(--accent);
+      }
+      .site-footer a {
+        color: var(--text-2);
+      }
+      .site-footer a:hover {
+        color: var(--accent);
       }
 
       .site-main {

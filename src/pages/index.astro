@@ -17,6 +17,11 @@ const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
     <p class="hero__sub">
       记录后端与 AI 的学习过程,顺手放一些日常用得上的开发小工具。
     </p>
+    <div class="hero__actions">
+      <a class="hero-btn" href="/tools/">打开工具</a>
+      <a class="hero-btn hero-btn--ghost" href="/search/">搜索笔记</a>
+      <a class="hero-btn hero-btn--ghost" href="/rss.xml">RSS</a>
+    </div>
     <div class="hero__line"></div>
   </section>
 
@@ -42,8 +47,15 @@ const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
       <a class="section-link" href="/tools/">全部工具 →</a>
     </div>
     <p class="tools-teaser__desc">
-      JSON 格式化、Base64、时间戳、UUID / 密码生成 —— 纯浏览器运行,数据不上传。
+      JSON、Base64、URL、时间戳、UUID / 密码 —— 纯浏览器运行,数据不上传。
     </p>
+    <div class="tools-teaser__grid">
+      <a href="/tools/json-formatter/">JSON</a>
+      <a href="/tools/base64/">Base64</a>
+      <a href="/tools/url-codec/">URL</a>
+      <a href="/tools/timestamp/">时间戳</a>
+      <a href="/tools/uuid/">UUID</a>
+    </div>
   </section>
 </BaseLayout>
 
@@ -66,7 +78,34 @@ const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
   .hero__sub {
     color: var(--text-1);
     font-size: var(--fs-lg);
-    max-width: 40ch;
+    max-width: 42ch;
+  }
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+    margin-top: var(--sp-6);
+  }
+  .hero-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: linear-gradient(180deg, rgba(109, 139, 255, 0.16), rgba(109, 139, 255, 0.05));
+    color: var(--text-0);
+    font-size: var(--fs-sm);
+    transition: border-color 0.15s ease, transform 0.15s ease, color 0.15s ease;
+  }
+  .hero-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent-3);
+    transform: translateY(-1px);
+  }
+  .hero-btn--ghost {
+    background: transparent;
+    color: var(--text-1);
   }
   /* 流光点缀:hero 下的呼吸光带 */
   .hero__line {
@@ -114,15 +153,36 @@ const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
     padding: var(--sp-6);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    background: var(--bg-1);
+    background:
+      radial-gradient(500px 160px at 100% 0%, rgba(176, 109, 255, 0.1), transparent 60%),
+      var(--bg-1);
   }
   .tools-teaser .section-head {
     margin-bottom: var(--sp-3);
   }
   .tools-teaser__desc {
     color: var(--text-1);
-    margin: 0;
+    margin: 0 0 var(--sp-4);
     max-width: 48ch;
+  }
+  .tools-teaser__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+  }
+  .tools-teaser__grid a {
+    display: inline-flex;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-2);
+    color: var(--text-1);
+    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+  }
+  .tools-teaser__grid a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .empty {

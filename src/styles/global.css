@@ -66,6 +66,11 @@
     "Microsoft YaHei", sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, "Cascadia Code",
     Consolas, monospace;
+
+  /* ---- 可读性辅助 ---- */
+  --sp-5: 1.25rem;
+  --sp-10: 2.5rem;
+  --focus-ring: 0 0 0 3px rgba(109, 139, 255, 0.18);
 }
 
 /* ============================================================================
@@ -130,6 +135,22 @@ a {
 }
 a:hover {
   color: var(--accent-3);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+::selection {
+  background: rgba(109, 139, 255, 0.28);
+  color: var(--text-0);
+}
+
+/* 滚动条克制一点,不抢注意力 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
 code,

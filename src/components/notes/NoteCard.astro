@@ -33,11 +33,14 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
   .note-card {
     position: relative;
     display: block;
+    height: 100%;
     padding: var(--sp-6);
     border-radius: var(--radius);
-    background: var(--bg-1);
+    background:
+      linear-gradient(180deg, rgba(109, 139, 255, 0.05), transparent 42%),
+      var(--bg-1);
     border: 1px solid var(--border);
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     overflow: hidden;
   }
   .note-card::before {
@@ -56,8 +59,10 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
     animation: flow-border 4s linear infinite;
   }
   .note-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     border-color: transparent;
+    box-shadow: var(--shadow);
+    color: var(--text-0);
   }
   .note-card:hover::before {
     opacity: 1;

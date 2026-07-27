@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../components/layout/BaseLayout.astro';
 import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { estimateReadingMinutes } from '../../lib/reading-time';
 
 export async function getStaticPaths() {
   const notes = await getCollection('notes', ({ data }) => !data.draft);
@@ -23,19 +24,30 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
   month: 'long',
   day: 'numeric',
 }).format(date);
+
+const minutes = estimateReadingMinutes(
+  [title, description ?? '', typeof note.body === 'string' ? note.body : ''].join('\n')
+);
 ---
 
 <BaseLayout title={title} description={description}>
   <article class="note">
     <a href="/" class="note__back">← 回笔记流</a>
     <h1 class="note__title">{title}</h1>
+    {
+      description && <p class="note__lead">{description}</p>
+    }
     <div class="note__meta">
-      <time>{dateStr}</time>
+      <time datetime={date.toISOString()}>{dateStr}</time>
+      <span class="note__sep">·</span>
+      <span>{minutes} 分钟阅读</span>
       {
         tags.length > 0 && (
           <ul class="note__tags">
             {tags.map((t) => (
-              <li><a href={`/tags/${t}/`}>#{t}</a></li>
+              <li>
+                <a href={`/tags/${t}/`}>#{t}</a>
+              </li>
             ))}
           </ul>
         )
@@ -46,6 +58,11 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
     </div>
   </article>
 </BaseLayout>
+
+<script>
+  import { enhanceCodeBlocks } from '../../components/notes/code-copy';
+  enhanceCodeBlocks(document.querySelector('.note__body') ?? document);
+</script>
 
 <style>
   .note {
@@ -59,38 +76,62 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
     margin-bottom: var(--sp-6);
   }
   .note__title {
-    font-size: var(--fs-2xl);
+    font-size: clamp(1.75rem, 4vw, 2.4rem);
     margin-bottom: var(--sp-3);
+    letter-spacing: -0.02em;
+  }
+  .note__lead {
+    color: var(--text-1);
+    font-size: var(--fs-lg);
+    margin-bottom: var(--sp-4);
+    line-height: 1.55;
   }
   .note__meta {
     display: flex;
     align-items: center;
-    gap: var(--sp-4);
+    flex-wrap: wrap;
+    gap: var(--sp-3);
     color: var(--text-2);
     font-size: var(--fs-sm);
     margin-bottom: var(--sp-8);
     padding-bottom: var(--sp-4);
     border-bottom: 1px solid var(--border);
   }
+  .note__sep {
+    opacity: 0.5;
+  }
   .note__tags {
     list-style: none;
     display: flex;
-    gap: var(--sp-3);
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+    margin-left: auto;
   }
-  .note__tags li {
+  .note__tags a {
     color: var(--accent);
     font-family: var(--font-mono);
     font-size: var(--fs-xs);
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: rgba(109, 139, 255, 0.08);
+    border: 1px solid rgba(109, 139, 255, 0.18);
+  }
+  .note__tags a:hover {
+    border-color: var(--accent);
   }
 
-  /* 笔记正文排版 */
+  .note__body {
+    font-size: 1.05rem;
+    line-height: 1.8;
+  }
   .note__body :global(p) {
     margin-bottom: var(--sp-4);
     color: var(--text-0);
   }
   .note__body :global(h2) {
     font-size: var(--fs-xl);
-    margin: var(--sp-8) 0 var(--sp-3);
+    margin: var(--sp-10, 2.5rem) 0 var(--sp-3);
+    padding-top: var(--sp-2);
   }
   .note__body :global(h3) {
     font-size: var(--fs-lg);
@@ -106,10 +147,10 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
   }
   .note__body :global(blockquote) {
     border-left: 3px solid var(--accent);
-    padding: var(--sp-1) var(--sp-4);
+    padding: var(--sp-3) var(--sp-4);
     margin: var(--sp-4) 0;
     color: var(--text-1);
-    background: var(--bg-1);
+    background: linear-gradient(90deg, rgba(109, 139, 255, 0.08), transparent 70%);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   }
   .note__body :global(code) {
@@ -124,11 +165,60 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
     border-radius: var(--radius);
     padding: var(--sp-4);
     overflow-x: auto;
-    margin-bottom: var(--sp-4);
+    margin: 0;
   }
   .note__body :global(pre code) {
     background: none;
     padding: 0;
     color: var(--text-0);
+  }
+  .note__body :global(.code-block) {
+    position: relative;
+    margin-bottom: var(--sp-4);
+  }
+  .note__body :global(.code-block__copy) {
+    position: absolute;
+    top: var(--sp-2);
+    right: var(--sp-2);
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    color: var(--text-1);
+    font-size: var(--fs-xs);
+    padding: var(--sp-1) var(--sp-3);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .note__body :global(.code-block:hover .code-block__copy),
+  .note__body :global(.code-block__copy:focus) {
+    opacity: 1;
+  }
+  .note__body :global(.code-block__copy:hover) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .note__body :global(a) {
+    text-underline-offset: 0.15em;
+  }
+  .note__body :global(hr) {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: var(--sp-8) 0;
+  }
+  .note__body :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--sp-4);
+    font-size: var(--fs-sm);
+  }
+  .note__body :global(th),
+  .note__body :global(td) {
+    border: 1px solid var(--border);
+    padding: var(--sp-2) var(--sp-3);
+  }
+  .note__body :global(th) {
+    background: var(--bg-1);
+    text-align: left;
   }
 </style>
