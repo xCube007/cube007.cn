@@ -81,7 +81,28 @@ src/
 
 ## 写一篇新笔记
 
-往 `src/content/notes/` 丢一个 `.md` 文件:
+### 最快方式
+
+```bash
+npm run new:note -- "我的笔记标题"
+# 可选自定义 slug:
+npm run new:note -- "我的笔记标题" my-custom-slug
+```
+
+会从 `templates/note.md` 生成 `src/content/notes/<slug>.md`,默认 `draft: true`。
+
+### 草稿流程
+
+| 环境 | 草稿是否可见 |
+|---|---|
+| `npm run dev` | ✅ 可见,卡片带「草稿」标记 |
+| `npm run build` / 线上 | ❌ 不发布 |
+
+写完后把 frontmatter 里的 `draft: true` 改成 `false`(或删掉该字段),再 commit + push 即上线。
+
+### 手写模板
+
+也可以直接在 `src/content/notes/` 新建 `.md`:
 
 ```markdown
 ---
@@ -89,12 +110,13 @@ title: '笔记标题'
 date: 2026-08-01
 tags: ['后端']
 description: '一句话摘要'
+draft: true
 ---
 
 正文内容……
 ```
 
-提交后(配了自动部署的话)自动发布。
+笔记页底部会按**共享标签**推荐相关笔记。
 
 ## 设计约定
 

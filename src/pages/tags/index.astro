@@ -1,9 +1,9 @@
 ---
 import BaseLayout from '../../components/layout/BaseLayout.astro';
-import { getCollection } from 'astro:content';
+import { getVisibleNotes } from '../../lib/notes';
 
-// 收集所有标签 + 每个标签的笔记数
-const notes = await getCollection('notes', ({ data }) => !data.draft);
+// 收集所有标签 + 每个标签的笔记数(开发环境含草稿)
+const notes = await getVisibleNotes();
 const tagCounts = new Map<string, number>();
 for (const note of notes) {
   for (const tag of note.data.tags) {

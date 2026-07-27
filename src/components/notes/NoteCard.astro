@@ -6,7 +6,7 @@ interface Props {
 }
 
 const { note } = Astro.props;
-const { title, date, tags, description } = note.data;
+const { title, date, tags, description, draft } = note.data;
 
 const dateStr = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric',
@@ -15,8 +15,11 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
 }).format(date);
 ---
 
-<a href={`/notes/${note.id}/`} class="note-card">
-  <div class="note-card__date">{dateStr}</div>
+<a href={`/notes/${note.id}/`} class:list={['note-card', draft && 'note-card--draft']}>
+  <div class="note-card__top">
+    <div class="note-card__date">{dateStr}</div>
+    {draft && <span class="note-card__draft">草稿</span>}
+  </div>
   <h3 class="note-card__title">{title}</h3>
   {description && <p class="note-card__desc">{description}</p>}
   {
@@ -67,12 +70,30 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
   .note-card:hover::before {
     opacity: 1;
   }
+  .note-card--draft {
+    border-style: dashed;
+  }
 
+  .note-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-2);
+    margin-bottom: var(--sp-2);
+  }
   .note-card__date {
     color: var(--text-2);
     font-size: var(--fs-xs);
     font-family: var(--font-mono);
-    margin-bottom: var(--sp-2);
+  }
+  .note-card__draft {
+    color: var(--warn);
+    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    background: rgba(251, 191, 36, 0.1);
   }
   .note-card__title {
     font-size: var(--fs-xl);

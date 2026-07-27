@@ -12,7 +12,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "new:note": "node scripts/new-note.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.3",

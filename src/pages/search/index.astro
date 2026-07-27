@@ -1,11 +1,9 @@
 ---
 import BaseLayout from '../../components/layout/BaseLayout.astro';
-import { getCollection } from 'astro:content';
 import type { SearchItem } from '../../lib/search';
+import { getVisibleNotes } from '../../lib/notes';
 
-const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.date.getTime() - a.data.date.getTime()
-);
+const notes = await getVisibleNotes();
 
 const index: SearchItem[] = notes.map((note) => ({
   id: note.id,

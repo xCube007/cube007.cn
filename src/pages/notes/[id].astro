@@ -3,25 +3,44 @@ import BaseLayout from '../../components/layout/BaseLayout.astro';
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import { estimateReadingMinutes } from '../../lib/reading-time';
 import { extractToc } from '../../lib/toc';
+import { findRelatedNotes } from '../../lib/related-notes';
+import { isNoteVisible } from '../../lib/notes';
 
 export async function getStaticPaths() {
-  const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
+  const notes = (await getCollection('notes', isNoteVisible)).sort(
     (a, b) => b.data.date.getTime() - a.data.date.getTime()
   );
+
+  // 相关推荐只从已发布笔记里挑,避免草稿互相串
+  const published = notes.filter((n) => !n.data.draft);
 
   return notes.map((note, i) => {
     const newer = i > 0 ? notes[i - 1] : null;
     const older = i < notes.length - 1 ? notes[i + 1] : null;
+    const related = findRelatedNotes(
+      {
+        id: note.id,
+        title: note.data.title,
+        tags: note.data.tags,
+        date: note.data.date,
+        description: note.data.description,
+      },
+      published.map((n) => ({
+        id: n.id,
+        title: n.data.title,
+        tags: n.data.tags,
+        date: n.data.date,
+        description: n.data.description,
+      })),
+      3
+    );
     return {
       params: { id: note.id },
       props: {
         note,
-        prev: older
-          ? { id: older.id, title: older.data.title }
-          : null,
-        next: newer
-          ? { id: newer.id, title: newer.data.title }
-          : null,
+        prev: older ? { id: older.id, title: older.data.title } : null,
+        next: newer ? { id: newer.id, title: newer.data.title } : null,
+        related,
       },
     };
   });
@@ -31,11 +50,18 @@ interface Props {
   note: CollectionEntry<'notes'>;
   prev: { id: string; title: string } | null;
   next: { id: string; title: string } | null;
+  related: Array<{
+    id: string;
+    title: string;
+    tags: string[];
+    sharedTags: string[];
+    score: number;
+  }>;
 }
 
-const { note, prev, next } = Astro.props;
+const { note, prev, next, related } = Astro.props;
 const { Content } = await render(note);
-const { title, date, tags, description } = note.data;
+const { title, date, tags, description, draft } = note.data;
 const body = typeof note.body === 'string' ? note.body : '';
 const toc = extractToc(body);
 
@@ -51,6 +77,13 @@ const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n
 <BaseLayout title={title} description={description}>
   <article class="note">
     <a href="/" class="note__back">← 回笔记流</a>
+    {
+      draft && (
+        <p class="note__draft-banner" role="status">
+          草稿 · 仅本地开发可见,生产构建不会发布
+        </p>
+      )
+    }
     <h1 class="note__title">{title}</h1>
     {description && <p class="note__lead">{description}</p>}
     <div class="note__meta">
@@ -88,6 +121,24 @@ const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n
     <div class="note__body">
       <Content />
     </div>
+
+    {
+      related.length > 0 && (
+        <section class="note__related" aria-label="相关笔记">
+          <h2 class="note__related-title">相关笔记</h2>
+          <div class="note__related-grid">
+            {related.map((r) => (
+              <a class="related-card" href={`/notes/${r.id}/`}>
+                <div class="related-card__shared">
+                  {r.sharedTags.map((t) => `#${t}`).join(' · ')}
+                </div>
+                <div class="related-card__title">{r.title}</div>
+              </a>
+            ))}
+          </div>
+        </section>
+      )
+    }
 
     <nav class="note__pager" aria-label="相邻笔记">
       {
@@ -136,7 +187,18 @@ const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n
     display: inline-block;
     color: var(--text-2);
     font-size: var(--fs-sm);
-    margin-bottom: var(--sp-6);
+    margin-bottom: var(--sp-4);
+  }
+  .note__draft-banner {
+    display: inline-flex;
+    margin-bottom: var(--sp-4);
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    background: rgba(251, 191, 36, 0.1);
+    color: var(--warn);
+    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
   }
   .note__title {
     font-size: clamp(1.75rem, 4vw, 2.4rem);
@@ -302,13 +364,54 @@ const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n
     text-align: left;
   }
 
+  .note__related {
+    margin-top: var(--sp-12);
+    padding-top: var(--sp-6);
+    border-top: 1px solid var(--border);
+  }
+  .note__related-title {
+    font-size: var(--fs-sm);
+    font-family: var(--font-mono);
+    color: var(--text-2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: var(--sp-4);
+  }
+  .note__related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--sp-3);
+  }
+  .related-card {
+    display: grid;
+    gap: var(--sp-2);
+    padding: var(--sp-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-1);
+    color: var(--text-0);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .related-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    color: var(--text-0);
+  }
+  .related-card__shared {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+  }
+  .related-card__title {
+    font-size: var(--fs-sm);
+    line-height: 1.4;
+  }
+
   .note__pager {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--sp-3);
-    margin-top: var(--sp-12);
-    padding-top: var(--sp-6);
-    border-top: 1px solid var(--border);
+    margin-top: var(--sp-8);
   }
   .pager__item {
     display: grid;

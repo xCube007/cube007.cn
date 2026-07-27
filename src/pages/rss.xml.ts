@@ -11,6 +11,7 @@ function escapeXml(s: string): string {
 }
 
 export const GET: APIRoute = async ({ site }) => {
+  // RSS 永远只出已发布笔记(即使本地 preview 也不带草稿)
   const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
     (a, b) => b.data.date.getTime() - a.data.date.getTime()
   );
