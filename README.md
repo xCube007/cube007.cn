@@ -35,6 +35,35 @@ npm run test       # 跑单元测试
 
 `dist/` 是纯静态文件,可托管在任意静态服务器(Nginx / Caddy / Vercel / Cloudflare Pages)。
 
+## 自动部署
+
+push 到 `main` 后,GitHub Actions 会:
+
+1. 安装依赖并跑测试
+2. `npm run build` 生成 `dist/`
+3. 通过 SSH 把产物同步到宝塔服务器 `/www/wwwroot/cube007.cn`
+
+需要在仓库 **Settings → Secrets and variables → Actions** 配置:
+
+| Secret | 含义 | 示例 |
+|---|---|---|
+| `SSH_HOST` | 服务器公网 IP | `43.138.10.176` |
+| `SSH_USER` | SSH 用户 | `root` |
+| `SSH_PORT` | SSH 端口 | `22` |
+| `SSH_PASSWORD` | 登录密码 | (仅存 Secrets,不要写进代码) |
+
+宝塔 Nginx 建议配置:
+
+```nginx
+root /www/wwwroot/cube007.cn;
+index index.html;
+error_page 404 /404.html;
+
+location / {
+    try_files $uri $uri/ $uri.html /index.html;
+}
+```
+
 ## 项目结构
 
 ```

@@ -1,0 +1,69 @@
+---
+import BaseLayout from '../components/layout/BaseLayout.astro';
+---
+
+<BaseLayout title="404" description="页面不存在。">
+  <section class="not-found">
+    <p class="not-found__code flow-text">404</p>
+    <h1 class="not-found__title">这里什么都没有</h1>
+    <p class="not-found__desc">
+      链接可能写错了,或者页面已经搬走。回首页继续看笔记和工具。
+    </p>
+    <div class="not-found__actions">
+      <a class="btn" href="/">回首页</a>
+      <a class="btn btn--ghost" href="/tools/">看工具</a>
+      <a class="btn btn--ghost" href="/tags/">看标签</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    min-height: 50vh;
+    display: grid;
+    align-content: center;
+    gap: var(--sp-4);
+    max-width: 36rem;
+  }
+  .not-found__code {
+    font-family: var(--font-mono);
+    font-size: clamp(4rem, 12vw, 7rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+  .not-found__title {
+    font-size: var(--fs-2xl);
+    margin: 0;
+  }
+  .not-found__desc {
+    color: var(--text-1);
+    font-size: var(--fs-lg);
+    margin: 0 0 var(--sp-4);
+  }
+  .not-found__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--bg-1);
+    color: var(--text-0);
+    font-size: var(--fs-sm);
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  .btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn--ghost {
+    background: transparent;
+    color: var(--text-1);
+  }
+</style>

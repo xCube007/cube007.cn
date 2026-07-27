@@ -16,7 +16,7 @@ Cube007 的个人网站:博客(编程/后端/AI 学习笔记)+ 开发小工具,�
 | 博客/工具关系 | 并列两个顶级区(`/notes` 与 `/tools`) | 各自独立,互不耦合 |
 | 视觉 | 暗色主题,简约流光科技感,流光仅作点缀 | 个性鲜明但不抢内容注意力 |
 | 首发工具 | JSON 格式化/压缩/校验、Base64 编解码、时间戳转换、UUID/密码生成 | 高频、低风险、能验证工具架构跑通 |
-| 托管 | 待定(首版不阻塞,任一静态主机即可) | 非首版关键路径 |
+| 托管 | 宝塔 + Nginx + GitHub Actions 自动部署 | 已有 VPS,push main 后 CI 构建并 scp 到 `/www/wwwroot/cube007.cn` |
 
 ## 领域语言
 
@@ -82,8 +82,18 @@ src/
 - **M3 — 工具铺满**:Base64、时间戳、UUID 三个工具,复用 M2 建立的模式。
 - **M4 — 内容与打磨**:补几篇真实笔记、标签页、细节打磨。
 
-## 待定问题(不阻塞 M1)
+## 部署
 
-- 托管平台(Vercel / Cloudflare Pages / GitHub Pages)。
-- 具体配色值与字体(实现时定,token 化即可)。
-- 域名 cube007.cn 是否已持有、DNS 怎么指。
+- 仓库: https://github.com/xCube007/cube007.cn (public)
+- CI: `.github/workflows/deploy.yml`
+  - push `main` → install → test → build → scp `dist.tar.gz` → ssh 解压到 `/www/wwwroot/cube007.cn`
+- 需要的 GitHub Secrets: `SSH_HOST` / `SSH_USER` / `SSH_PORT` / `SSH_PASSWORD`
+- 服务器 Nginx 注意:
+  - `try_files $uri $uri/ $uri.html /index.html;`
+  - `error_page 404 /404.html;`
+- 域名 `cube007.cn` 指向服务器公网 IP,SSL 用宝塔 Let's Encrypt
+
+## 待定问题
+
+- 是否从密码 SSH 切到密钥认证(更稳妥)。
+- DNS / HTTPS 是否已最终生效。

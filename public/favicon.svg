@@ -8,5 +8,5 @@
   </defs>
   <rect width="32" height="32" rx="7" fill="#07080c"/>
   <rect x="3.5" y="3.5" width="25" height="25" rx="5" fill="none" stroke="url(#g)" stroke-width="2"/>
-  <text x="16" y="21" font-family="monospace" font-size="13" font-weight="700" text-anchor="middle" fill="url(#g)">c</text>
+  <text x="16" y="21" font-family="monospace" font-size="13" font-weight="700" text-anchor="middle" fill="url(#g)">C</text>
 </svg>

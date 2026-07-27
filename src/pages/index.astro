@@ -21,7 +21,10 @@ const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
   </section>
 
   <section class="feed">
-    <h2 class="section-title">最新笔记</h2>
+    <div class="section-head">
+      <h2 class="section-title">最新笔记</h2>
+      <a class="section-link" href="/tags/">按标签浏览 →</a>
+    </div>
     {
       notes.length === 0 ? (
         <p class="empty">还没有笔记,稍后再来。</p>
@@ -31,6 +34,16 @@ const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
         </div>
       )
     }
+  </section>
+
+  <section class="tools-teaser">
+    <div class="section-head">
+      <h2 class="section-title">开发小工具</h2>
+      <a class="section-link" href="/tools/">全部工具 →</a>
+    </div>
+    <p class="tools-teaser__desc">
+      JSON 格式化、Base64、时间戳、UUID / 密码生成 —— 纯浏览器运行,数据不上传。
+    </p>
   </section>
 </BaseLayout>
 
@@ -66,19 +79,50 @@ const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
     animation: flow-line 5s ease-in-out infinite;
   }
 
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-6);
+  }
   .section-title {
     font-size: var(--fs-sm);
     font-family: var(--font-mono);
     color: var(--text-2);
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    margin-bottom: var(--sp-6);
+    margin: 0;
+  }
+  .section-link {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    white-space: nowrap;
+  }
+  .section-link:hover {
+    color: var(--accent);
   }
 
   .feed__grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: var(--sp-4);
+  }
+
+  .tools-teaser {
+    margin-top: var(--sp-12);
+    padding: var(--sp-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-1);
+  }
+  .tools-teaser .section-head {
+    margin-bottom: var(--sp-3);
+  }
+  .tools-teaser__desc {
+    color: var(--text-1);
+    margin: 0;
+    max-width: 48ch;
   }
 
   .empty {
