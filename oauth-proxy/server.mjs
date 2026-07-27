@@ -21,7 +21,40 @@
  */
 
 import http from 'node:http';
+import { readFileSync, existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { URL } from 'node:url';
+
+/**
+ * 读取同目录 .env(宝塔 Node 项目常没有环境变量 UI)。
+ * 不覆盖进程里已有的环境变量;格式 KEY=VALUE,支持 # 注释。
+ */
+function loadDotEnv() {
+  const dir = dirname(fileURLToPath(import.meta.url));
+  const envPath = join(dir, '.env');
+  if (!existsSync(envPath)) return;
+  const text = readFileSync(envPath, 'utf8');
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eq = line.indexOf('=');
+    if (eq <= 0) continue;
+    const key = line.slice(0, eq).trim();
+    let val = line.slice(eq + 1).trim();
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    if (process.env[key] === undefined) {
+      process.env[key] = val;
+    }
+  }
+}
+
+loadDotEnv();
 
 const PORT = Number(process.env.OAUTH_PORT || 8787);
 const HOST = process.env.OAUTH_HOST || '127.0.0.1';

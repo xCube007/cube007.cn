@@ -154,25 +154,43 @@ node -v
 | 启动方式 | `node server.mjs` 或脚本 `start` |
 | 开机启动 | 打开 |
 
-3. **环境变量**(非常关键,缺了登录必挂)  
-   在项目设置 / 环境变量里逐条添加:
+3. **环境变量**(宝塔 Node 项目界面常常**没有**环境变量输入框)  
+   用项目目录下的 `.env` 文件(推荐,server.mjs 会自动读取):
 
-| 变量名 | 值 | 说明 |
-|---|---|---|
-| `OAUTH_CLIENT_ID` | 你的 Client ID | GitHub OAuth App |
-| `OAUTH_CLIENT_SECRET` | 你的 Client Secret | 绝密 |
-| `OAUTH_ALLOWED_USERS` | `xCube007` | 仅你的 GitHub 用户名,多个用逗号 |
-| `OAUTH_PORT` | `8787` | 与项目端口一致 |
-| `OAUTH_HOST` | `127.0.0.1` | 只监听本机,外网走 Nginx |
-| `OAUTH_ORIGIN` | `https://cube007.cn,https://www.cube007.cn` | CMS 所在站点,postMessage 用 |
+   1. 宝塔 **文件** → 进入 `/www/wwwroot/cube007-oauth/`  
+   2. **新建文件** 名为 `.env`(注意前面有点)  
+   3. 写入下面内容并保存(替换成你的真实值):
 
-4. 保存 → **启动** / **重启**  
-5. 看运行状态是否为「运行中」,点日志应出现类似:
+```bash
+OAUTH_CLIENT_ID=你的ClientID
+OAUTH_CLIENT_SECRET=你的ClientSecret
+OAUTH_ALLOWED_USERS=xCube007
+OAUTH_PORT=8787
+OAUTH_HOST=127.0.0.1
+OAUTH_ORIGIN=https://cube007.cn,https://www.cube007.cn
+```
+
+   也可先把仓库里的 `oauth-proxy/.env.example` 复制为 `.env` 再改。
+
+4. 项目配置页建议:
+
+| 项 | 值 |
+|---|---|
+| 项目目录 | `/www/wwwroot/cube007-oauth` |
+| 启动选项 | `start` 或 `node server.mjs`(选 package.json 的 start 即可) |
+| Node 版本 | v20 / v22 |
+| 项目端口 | `8787` |
+| 运行用户 | `www` |
+
+5. **保存修改** → 回到列表 **启动/重启**  
+6. 点 **项目日志**,应出现类似:
 
 ```text
 [oauth] listening on http://127.0.0.1:8787
 [oauth] allowed users: xcube007
 ```
+
+若日志警告 `OAUTH_CLIENT_ID / OAUTH_CLIENT_SECRET 尚未设置`,说明 `.env` 路径不对或没重启。
 
 ### 5.2 没有「Node 项目」、改用 PM2
 

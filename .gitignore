@@ -12,6 +12,7 @@ pnpm-debug.log*
 # environment variables
 .env
 .env.production
+oauth-proxy/.env
 # macOS
 .DS_Store
 # editor
