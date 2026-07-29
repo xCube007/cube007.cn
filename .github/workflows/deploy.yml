@@ -39,31 +39,39 @@ jobs:
       - name: 构建
         run: npm run build
 
-      # 把 dist/ 打成 tar,scp 上传到服务器临时目录
+      # 把 dist/ 打成 tar,再 scp + ssh 部署到宝塔服务器
+      # 不用 appleboy/scp-action:它会走远程 login shell,宝塔机上的 nvm
+      # 会往 stderr 打 "nvm is not compatible with the npm config prefix" 并被当成失败回滚。
+      # 这里改用 OpenSSH scp(SFTP 子系统,不跑 bashrc)+ bash --noprofile --norc 执行部署。
       - name: 打包 dist
         run: tar -czf dist.tar.gz -C dist .
 
-      - name: 上传压缩包到服务器
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          port: ${{ secrets.SSH_PORT }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          source: dist.tar.gz
-          target: /tmp/cube007-deploy
+      - name: 上传并部署到服务器
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq sshpass
 
-      # 在服务器上:清空站点目录(保留目录本身)→ 解压新文件 → 删临时包
-      - name: 服务器端解压部署
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          port: ${{ secrets.SSH_PORT }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          script: |
-            mkdir -p /www/wwwroot/cube007.cn
-            find /www/wwwroot/cube007.cn -mindepth 1 -delete
-            tar -xzf /tmp/cube007-deploy/dist.tar.gz -C /www/wwwroot/cube007.cn
-            rm -rf /tmp/cube007-deploy
-            echo "Deployed at $(date)"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+          REMOTE="${SSH_USER}@${SSH_HOST}"
+          PORT="${SSH_PORT:-22}"
+
+          echo "Uploading dist.tar.gz ..."
+          sshpass -e scp $SSH_OPTS -P "$PORT" dist.tar.gz "$REMOTE:/tmp/cube007-dist.tar.gz"
+
+          echo "Extracting on server ..."
+          # --noprofile --norc:跳过 .bashrc / nvm / 宝塔 Node 初始化,避免 stderr 噪音
+          sshpass -e ssh $SSH_OPTS -p "$PORT" "$REMOTE" \
+            "bash --noprofile --norc -c '
+              set -e
+              mkdir -p /www/wwwroot/cube007.cn
+              find /www/wwwroot/cube007.cn -mindepth 1 -delete
+              tar -xzf /tmp/cube007-dist.tar.gz -C /www/wwwroot/cube007.cn
+              rm -f /tmp/cube007-dist.tar.gz
+              echo \"Deployed at \$(date)\"
+            '"
