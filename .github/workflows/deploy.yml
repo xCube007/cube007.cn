@@ -65,12 +65,13 @@ jobs:
           sshpass -e scp $SSH_OPTS -P "$PORT" dist.tar.gz "$REMOTE:/tmp/cube007-dist.tar.gz"
 
           echo "Extracting on server ..."
-          # --noprofile --norc:跳过 .bashrc / nvm / 宝塔 Node 初始化,避免 stderr 噪音
+          # --noprofile --norc:跳过 .bashrc / nvm / 宝塔 Node 初始化
+          # 跳过 .user.ini:宝塔 open_basedir 文件,常被 chattr +i 锁住,删不掉
           sshpass -e ssh $SSH_OPTS -p "$PORT" "$REMOTE" \
             "bash --noprofile --norc -c '
               set -e
               mkdir -p /www/wwwroot/cube007.cn
-              find /www/wwwroot/cube007.cn -mindepth 1 -delete
+              find /www/wwwroot/cube007.cn -mindepth 1 ! -name .user.ini -delete
               tar -xzf /tmp/cube007-dist.tar.gz -C /www/wwwroot/cube007.cn
               rm -f /tmp/cube007-dist.tar.gz
               echo \"Deployed at \$(date)\"
