@@ -27,6 +27,10 @@
   --warn: #fbbf24;
   --err: #f87171;
 
+  /* ---- 文本对比高亮(左/右两色,无新旧语义) ---- */
+  --diff-left: color-mix(in srgb, var(--err) 35%, transparent);
+  --diff-right: color-mix(in srgb, var(--ok) 32%, transparent);
+
   /* ---- 流光定义(用于描边/标题) ---- */
   --flow: linear-gradient(
     100deg,

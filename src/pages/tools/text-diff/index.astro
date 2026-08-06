@@ -1,0 +1,440 @@
+---
+import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import { compareText } from '../../../lib/tools/text-diff';
+void compareText;
+---
+
+<BaseLayout title="文本对比" description="并排对比两段文本或代码，行级对齐并标出字符级差异。">
+  <section class="tool-head">
+    <a href="/tools/" class="tool-back">← 所有工具</a>
+    <h1 class="tool-title">文本对比</h1>
+    <p class="tool-desc">左右粘贴文本或代码，实时标出差异。纯浏览器运行，数据不上传。</p>
+  </section>
+
+  <div class="tool">
+    <div class="tool__bar">
+      <div class="tool__actions">
+        <button type="button" id="btn-swap">交换左右</button>
+        <button type="button" id="btn-clear" class="ghost">清空两侧</button>
+      </div>
+      <p id="status" class="tool__status" role="status"></p>
+    </div>
+
+    <div class="diff">
+      <div class="diff__pane" data-side="left">
+        <div class="diff__label">
+          <span class="diff__swatch diff__swatch--left" aria-hidden="true"></span>
+          左侧
+        </div>
+        <div class="diff__frame">
+          <div class="diff__gutter" id="gutter-left" aria-hidden="true"></div>
+          <div class="diff__editor">
+            <pre class="diff__backdrop" id="backdrop-left" aria-hidden="true"></pre>
+            <textarea
+              id="input-left"
+              class="diff__input"
+              placeholder="粘贴左侧文本…"
+              spellcheck="false"
+              autocomplete="off"
+              wrap="soft"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="diff__pane" data-side="right">
+        <div class="diff__label">
+          <span class="diff__swatch diff__swatch--right" aria-hidden="true"></span>
+          右侧
+        </div>
+        <div class="diff__frame">
+          <div class="diff__gutter" id="gutter-right" aria-hidden="true"></div>
+          <div class="diff__editor">
+            <pre class="diff__backdrop" id="backdrop-right" aria-hidden="true"></pre>
+            <textarea
+              id="input-right"
+              class="diff__input"
+              placeholder="粘贴右侧文本…"
+              spellcheck="false"
+              autocomplete="off"
+              wrap="soft"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import {
+    compareText,
+    type DiffLine,
+  } from '../../../lib/tools/text-diff';
+
+  const leftInput = document.getElementById('input-left') as HTMLTextAreaElement;
+  const rightInput = document.getElementById('input-right') as HTMLTextAreaElement;
+  const leftBackdrop = document.getElementById('backdrop-left') as HTMLPreElement;
+  const rightBackdrop = document.getElementById('backdrop-right') as HTMLPreElement;
+  const leftGutter = document.getElementById('gutter-left') as HTMLDivElement;
+  const rightGutter = document.getElementById('gutter-right') as HTMLDivElement;
+  const status = document.getElementById('status') as HTMLParagraphElement;
+
+  const DEBOUNCE_MS = 120;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let syncingScroll: 'left' | 'right' | null = null;
+
+  function escapeHtml(s: string): string {
+    return s
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;');
+  }
+
+  function normalizeValue(ta: HTMLTextAreaElement) {
+    if (!ta.value.includes('\r')) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const before = ta.value.length;
+    ta.value = ta.value.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const delta = before - ta.value.length;
+    ta.setSelectionRange(Math.max(0, start - delta), Math.max(0, end - delta));
+  }
+
+  function realLines(lines: DiffLine[]): DiffLine[] {
+    return lines.filter((l) => l.kind !== 'empty');
+  }
+
+  function renderBackdrop(lines: DiffLine[], side: 'left' | 'right'): string {
+    return realLines(lines)
+      .map((line) => {
+        let inner: string;
+        if (line.kind === 'only') {
+          const text = line.segments.map((s) => s.text).join('');
+          inner = `<mark class="hl hl--${side} hl--line">${escapeHtml(text)}</mark>`;
+        } else {
+          inner = line.segments
+            .map((s) =>
+              s.highlight
+                ? `<mark class="hl hl--${side}">${escapeHtml(s.text)}</mark>`
+                : escapeHtml(s.text)
+            )
+            .join('');
+        }
+        return `<span class="ln ln--${line.kind}">${inner}</span>`;
+      })
+      .join('\n');
+  }
+
+  function renderGutter(lineCount: number): string {
+    if (lineCount === 0) return '';
+    let html = '';
+    for (let i = 1; i <= lineCount; i += 1) {
+      html += `<span class="diff__num">${i}</span>`;
+    }
+    return html;
+  }
+
+  function countDiffs(left: DiffLine[], right: DiffLine[]): number {
+    let n = 0;
+    const len = Math.max(left.length, right.length);
+    for (let i = 0; i < len; i += 1) {
+      const l = left[i];
+      const r = right[i];
+      if (!l || !r) {
+        n += 1;
+        continue;
+      }
+      if (l.kind !== 'same' || r.kind !== 'same') n += 1;
+    }
+    return n;
+  }
+
+  function refresh() {
+    normalizeValue(leftInput);
+    normalizeValue(rightInput);
+
+    const result = compareText(leftInput.value, rightInput.value);
+
+    if (leftInput.value === '') {
+      leftBackdrop.innerHTML = '';
+      leftGutter.innerHTML = '';
+    } else {
+      leftBackdrop.innerHTML = renderBackdrop(result.left, 'left');
+      leftGutter.innerHTML = renderGutter(realLines(result.left).length);
+    }
+
+    if (rightInput.value === '') {
+      rightBackdrop.innerHTML = '';
+      rightGutter.innerHTML = '';
+    } else {
+      rightBackdrop.innerHTML = renderBackdrop(result.right, 'right');
+      rightGutter.innerHTML = renderGutter(realLines(result.right).length);
+    }
+
+    const empty = leftInput.value === '' && rightInput.value === '';
+    if (empty) {
+      status.textContent = '';
+      status.className = 'tool__status';
+      return;
+    }
+
+    const diffs = countDiffs(result.left, result.right);
+    if (diffs === 0) {
+      status.textContent = '两侧相同';
+      status.className = 'tool__status tool__status--ok';
+    } else {
+      status.textContent = `${diffs} 处不同`;
+      status.className = 'tool__status';
+    }
+  }
+
+  function scheduleRefresh() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(refresh, DEBOUNCE_MS);
+  }
+
+  function syncScroll(from: 'left' | 'right') {
+    if (syncingScroll && syncingScroll !== from) return;
+    syncingScroll = from;
+    const src = from === 'left' ? leftInput : rightInput;
+    const dst = from === 'left' ? rightInput : leftInput;
+    const srcBackdrop = from === 'left' ? leftBackdrop : rightBackdrop;
+    const dstBackdrop = from === 'left' ? rightBackdrop : leftBackdrop;
+    const srcGutter = from === 'left' ? leftGutter : rightGutter;
+    const dstGutter = from === 'left' ? rightGutter : leftGutter;
+
+    dst.scrollTop = src.scrollTop;
+    dst.scrollLeft = src.scrollLeft;
+
+    const tx = `translate(${-src.scrollLeft}px, ${-src.scrollTop}px)`;
+    srcBackdrop.style.transform = tx;
+    dstBackdrop.style.transform = `translate(${-dst.scrollLeft}px, ${-dst.scrollTop}px)`;
+    srcGutter.style.transform = `translateY(${-src.scrollTop}px)`;
+    dstGutter.style.transform = `translateY(${-dst.scrollTop}px)`;
+
+    requestAnimationFrame(() => {
+      syncingScroll = null;
+    });
+  }
+
+  leftInput.addEventListener('input', scheduleRefresh);
+  rightInput.addEventListener('input', scheduleRefresh);
+  leftInput.addEventListener('scroll', () => syncScroll('left'));
+  rightInput.addEventListener('scroll', () => syncScroll('right'));
+
+  document.getElementById('btn-clear')!.addEventListener('click', () => {
+    leftInput.value = '';
+    rightInput.value = '';
+    refresh();
+  });
+
+  document.getElementById('btn-swap')!.addEventListener('click', () => {
+    const tmp = leftInput.value;
+    leftInput.value = rightInput.value;
+    rightInput.value = tmp;
+    refresh();
+  });
+
+  refresh();
+</script>
+
+<style>
+  .tool-head {
+    margin-bottom: var(--sp-8);
+  }
+  .tool-back {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+  }
+  .tool-title {
+    font-size: var(--fs-2xl);
+    margin: var(--sp-4) 0 var(--sp-2);
+  }
+  .tool-desc {
+    color: var(--text-1);
+  }
+
+  .tool {
+    display: grid;
+    gap: var(--sp-4);
+  }
+
+  .tool__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+  }
+  .tool__actions {
+    display: flex;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+  }
+  .tool__actions button {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    color: var(--text-0);
+    font-family: var(--font-sans);
+    font-size: var(--fs-sm);
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .tool__actions button:hover {
+    border-color: var(--accent);
+    background: var(--bg-2);
+  }
+  .tool__actions button.ghost {
+    color: var(--text-2);
+  }
+
+  .tool__status {
+    font-size: var(--fs-sm);
+    font-family: var(--font-mono);
+    min-height: 1.25rem;
+    color: var(--text-1);
+    margin: 0;
+  }
+  .tool__status--ok {
+    color: var(--ok);
+  }
+
+  .diff {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4);
+    min-width: 0;
+  }
+
+  .diff__pane {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    min-width: 0;
+  }
+
+  .diff__label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    color: var(--text-1);
+    font-size: var(--fs-sm);
+    font-family: var(--font-mono);
+  }
+  .diff__swatch {
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 2px;
+  }
+  .diff__swatch--left {
+    background: var(--err);
+  }
+  .diff__swatch--right {
+    background: var(--ok);
+  }
+
+  .diff__frame {
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    min-height: min(60vh, 560px);
+    height: min(60vh, 560px);
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .diff__pane[data-side='left'] .diff__frame:focus-within {
+    border-color: color-mix(in srgb, var(--err) 55%, var(--border));
+  }
+  .diff__pane[data-side='right'] .diff__frame:focus-within {
+    border-color: color-mix(in srgb, var(--ok) 55%, var(--border));
+  }
+
+  .diff__gutter {
+    background: var(--bg-1);
+    border-right: 1px solid var(--border);
+    padding: var(--sp-4) var(--sp-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    line-height: 1.55;
+    color: var(--text-2);
+    text-align: right;
+    user-select: none;
+    overflow: hidden;
+    will-change: transform;
+  }
+  .diff__num {
+    display: block;
+    height: 1.55em;
+  }
+
+  .diff__editor {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .diff__backdrop,
+  .diff__input {
+    margin: 0;
+    padding: var(--sp-4);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    tab-size: 2;
+    box-sizing: border-box;
+  }
+
+  .diff__backdrop {
+    position: absolute;
+    inset: 0;
+    color: var(--text-0);
+    pointer-events: none;
+    overflow: visible;
+    will-change: transform;
+  }
+
+  .diff__input {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--text-0);
+    overflow: auto;
+  }
+  .diff__input::placeholder {
+    color: var(--text-2);
+    opacity: 1;
+  }
+  /* 有内容时占位符本身透明，避免叠在高亮上 */
+  .diff__input:not(:placeholder-shown)::placeholder {
+    opacity: 0;
+  }
+
+  :global(.hl) {
+    border-radius: var(--radius-sm);
+  }
+  :global(.hl--left) {
+    background: var(--diff-left);
+    color: var(--text-0);
+  }
+  :global(.hl--right) {
+    background: var(--diff-right);
+    color: var(--text-0);
+  }
+  :global(.hl--line) {
+    display: inline;
+  }
+</style>
