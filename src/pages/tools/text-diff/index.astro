@@ -27,7 +27,9 @@ void compareText;
           左侧
         </div>
         <div class="diff__frame">
-          <div class="diff__gutter" id="gutter-left" aria-hidden="true"></div>
+          <div class="diff__gutter">
+            <div class="diff__gutter-inner" id="gutter-left" aria-hidden="true"></div>
+          </div>
           <div class="diff__editor">
             <pre class="diff__backdrop" id="backdrop-left" aria-hidden="true"></pre>
             <textarea
@@ -48,7 +50,9 @@ void compareText;
           右侧
         </div>
         <div class="diff__frame">
-          <div class="diff__gutter" id="gutter-right" aria-hidden="true"></div>
+          <div class="diff__gutter">
+            <div class="diff__gutter-inner" id="gutter-right" aria-hidden="true"></div>
+          </div>
           <div class="diff__editor">
             <pre class="diff__backdrop" id="backdrop-right" aria-hidden="true"></pre>
             <textarea
@@ -122,9 +126,10 @@ void compareText;
             )
             .join('');
         }
-        return `<span class="ln ln--${line.kind}">${inner}</span>`;
+        // 空行放零宽空格,保证块级行有可测高度
+        return `<div class="ln ln--${line.kind}">${inner || '&#8203;'}</div>`;
       })
-      .join('\n');
+      .join('');
   }
 
   function renderGutter(lineCount: number): string {
@@ -134,6 +139,28 @@ void compareText;
       html += `<span class="diff__num">${i}</span>`;
     }
     return html;
+  }
+
+  /** 按 backdrop 每行实际高度(含软换行)对齐行号 */
+  function syncGutterHeights(
+    backdrop: HTMLPreElement,
+    gutter: HTMLDivElement
+  ) {
+    const lines = backdrop.querySelectorAll<HTMLElement>('.ln');
+    const nums = gutter.querySelectorAll<HTMLElement>('.diff__num');
+    lines.forEach((ln, i) => {
+      const num = nums[i];
+      if (num) num.style.height = `${ln.offsetHeight}px`;
+    });
+  }
+
+  function applyScrollChrome(
+    input: HTMLTextAreaElement,
+    backdrop: HTMLPreElement,
+    gutter: HTMLDivElement
+  ) {
+    backdrop.style.transform = `translate(${-input.scrollLeft}px, ${-input.scrollTop}px)`;
+    gutter.style.transform = `translateY(${-input.scrollTop}px)`;
   }
 
   function countDiffs(left: DiffLine[], right: DiffLine[]): number {
@@ -173,6 +200,13 @@ void compareText;
       rightGutter.innerHTML = renderGutter(realLines(result.right).length);
     }
 
+    requestAnimationFrame(() => {
+      syncGutterHeights(leftBackdrop, leftGutter);
+      syncGutterHeights(rightBackdrop, rightGutter);
+      applyScrollChrome(leftInput, leftBackdrop, leftGutter);
+      applyScrollChrome(rightInput, rightBackdrop, rightGutter);
+    });
+
     const empty = leftInput.value === '' && rightInput.value === '';
     if (empty) {
       status.textContent = '';
@@ -208,11 +242,8 @@ void compareText;
     dst.scrollTop = src.scrollTop;
     dst.scrollLeft = src.scrollLeft;
 
-    const tx = `translate(${-src.scrollLeft}px, ${-src.scrollTop}px)`;
-    srcBackdrop.style.transform = tx;
-    dstBackdrop.style.transform = `translate(${-dst.scrollLeft}px, ${-dst.scrollTop}px)`;
-    srcGutter.style.transform = `translateY(${-src.scrollTop}px)`;
-    dstGutter.style.transform = `translateY(${-dst.scrollTop}px)`;
+    applyScrollChrome(src, srcBackdrop, srcGutter);
+    applyScrollChrome(dst, dstBackdrop, dstGutter);
 
     requestAnimationFrame(() => {
       syncingScroll = null;
@@ -223,6 +254,11 @@ void compareText;
   rightInput.addEventListener('input', scheduleRefresh);
   leftInput.addEventListener('scroll', () => syncScroll('left'));
   rightInput.addEventListener('scroll', () => syncScroll('right'));
+
+  window.addEventListener('resize', () => {
+    syncGutterHeights(leftBackdrop, leftGutter);
+    syncGutterHeights(rightBackdrop, rightGutter);
+  });
 
   document.getElementById('btn-clear')!.addEventListener('click', () => {
     leftInput.value = '';
@@ -241,8 +277,13 @@ void compareText;
 </script>
 
 <style>
+  /* 本页需要更宽的对比区 */
+  :global(body:has(.diff) .site-main) {
+    max-width: min(1400px, 100%);
+  }
+
   .tool-head {
-    margin-bottom: var(--sp-8);
+    margin-bottom: var(--sp-6);
   }
   .tool-back {
     color: var(--text-2);
@@ -340,8 +381,8 @@ void compareText;
   .diff__frame {
     display: grid;
     grid-template-columns: 3rem 1fr;
-    min-height: min(60vh, 560px);
-    height: min(60vh, 560px);
+    height: calc(100vh - 220px);
+    min-height: 520px;
     background: var(--bg-2);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -358,18 +399,22 @@ void compareText;
     background: var(--bg-1);
     border-right: 1px solid var(--border);
     padding: var(--sp-4) var(--sp-2);
+    overflow: hidden;
+    user-select: none;
+  }
+  .diff__gutter-inner {
     font-family: var(--font-mono);
     font-size: var(--fs-sm);
     line-height: 1.55;
     color: var(--text-2);
     text-align: right;
-    user-select: none;
-    overflow: hidden;
     will-change: transform;
   }
-  .diff__num {
+  /* innerHTML 插入的节点没有 data-astro-cid，必须 global */
+  :global(.diff__num) {
     display: block;
-    height: 1.55em;
+    box-sizing: border-box;
+    line-height: 1.55;
   }
 
   .diff__editor {
@@ -401,6 +446,14 @@ void compareText;
     will-change: transform;
   }
 
+  :global(.diff__backdrop .ln) {
+    display: block;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    min-height: 1.55em;
+  }
+
   .diff__input {
     position: relative;
     z-index: 1;
@@ -418,7 +471,6 @@ void compareText;
     color: var(--text-2);
     opacity: 1;
   }
-  /* 有内容时占位符本身透明，避免叠在高亮上 */
   .diff__input:not(:placeholder-shown)::placeholder {
     opacity: 0;
   }
