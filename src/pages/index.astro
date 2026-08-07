@@ -2,6 +2,7 @@
 import BaseLayout from '../components/layout/BaseLayout.astro';
 import NoteCard from '../components/notes/NoteCard.astro';
 import { getVisibleNotes } from '../lib/notes';
+import { tools, toolsSummary } from '../lib/tools/registry';
 
 // 时间流:按日期倒序;开发环境含草稿,生产构建排除
 const notes = await getVisibleNotes();
@@ -9,6 +10,7 @@ const notes = await getVisibleNotes();
 
 <BaseLayout>
   <section class="hero">
+    <p class="hero__eyebrow">Notes &amp; Tools</p>
     <h1 class="hero__title">
       <span class="flow-text">Cube007</span> 的学习笔记
     </h1>
@@ -40,15 +42,10 @@ const notes = await getVisibleNotes();
       <a class="section-link" href="/tools/">全部工具 →</a>
     </div>
     <p class="tools-teaser__desc">
-      JSON、Base64、URL、正则、时间戳、UUID / 密码 —— 纯浏览器运行,数据不上传。
+      {toolsSummary()} —— 纯浏览器运行,数据不上传。
     </p>
     <div class="tools-teaser__grid">
-      <a href="/tools/json-formatter/">JSON</a>
-      <a href="/tools/base64/">Base64</a>
-      <a href="/tools/url-codec/">URL</a>
-      <a href="/tools/regex/">正则</a>
-      <a href="/tools/timestamp/">时间戳</a>
-      <a href="/tools/uuid/">UUID</a>
+      {tools.map((t) => <a href={`/tools/${t.slug}/`}>{t.short}</a>)}
     </div>
   </section>
 </BaseLayout>
@@ -56,14 +53,28 @@ const notes = await getVisibleNotes();
 <style>
   .hero {
     margin-bottom: var(--sp-12);
+    padding-top: var(--sp-8);
   }
   .hero__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
     color: var(--accent);
     font-family: var(--font-mono);
     font-size: var(--fs-sm);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     margin-bottom: var(--sp-3);
+  }
+  /* 前面一点会呼吸的指示灯,给标题一个起点 */
+  .hero__eyebrow::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-3);
+    box-shadow: 0 0 8px var(--accent-3);
+    animation: pulse-dot 2.4s ease-in-out infinite;
   }
   .hero__title {
     font-size: var(--fs-3xl);
@@ -116,13 +127,28 @@ const notes = await getVisibleNotes();
   }
 
   .tools-teaser {
+    position: relative;
+    overflow: hidden;
     margin-top: var(--sp-12);
     padding: var(--sp-6);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background:
-      radial-gradient(500px 160px at 100% 0%, rgba(176, 109, 255, 0.1), transparent 60%),
+      radial-gradient(
+        500px 160px at 100% 0%,
+        color-mix(in srgb, var(--accent-2) 12%, transparent),
+        transparent 60%
+      ),
       var(--bg-1);
+  }
+  /* 顶边一道流光,把工具区和上面的笔记流分开 */
+  .tools-teaser::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: var(--flow);
+    opacity: 0.6;
   }
   .tools-teaser .section-head {
     margin-bottom: var(--sp-3);

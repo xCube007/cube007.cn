@@ -74,6 +74,7 @@ location / {
 src/
   content/notes/     # 笔记 Markdown,frontmatter: title/date/tags/draft
   lib/tools/         # 工具的纯函数逻辑 + 单测(逻辑与界面分离)
+  lib/tools/registry.ts  # 工具清单唯一定义点,工具页与首页都读它
   pages/             # 路由:笔记 / 标签 / 工具
   components/        # 布局、笔记卡片、共享工具 UI
   styles/tokens.css  # 设计 token 唯一定义点(颜色/流光动画/间距),前台与后台共用
@@ -158,4 +159,6 @@ draft: true
 - **逻辑与界面分离**:每个工具的计算逻辑是 `src/lib/tools/` 下的纯函数,UI 只管调用与渲染,逻辑可单测。
 - **设计 token 单点定义**:颜色、流光动画、间距只在 `styles/tokens.css` 定义,组件只引用 `var(--xxx)`,不内联写死。写作后台的配色也从这一份生成(`npm run sync:admin-theme`,dev/build 前自动跑),所以前台和后台不会各走各的。
 - **正文排版单点定义**:笔记正文样式在 `styles/prose.css`,文章页和后台预览面板共用同一份 —— 后台里看到的排版就是发布后的排版。
+- **工具清单单点定义**:新增工具只在 `src/lib/tools/registry.ts` 登记一次,工具页和首页都从它渲染。`registry.test.ts` 会拿注册表和 `src/pages/tools/` 的实际目录对账,漏登记就测试失败,不会出现"工具上线了但首页没有入口"。
+- **动效不空跑**:动画只在看得见的时候跑(流光描边挂 `:hover`,不常驻 `infinite`),并且尊重系统的"减少动态效果"设置。
 - **前台零运行时后端**:访客侧全是静态文件;仅管理员写作走 GitHub API + 独立 OAuth 代理。

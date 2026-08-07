@@ -15,7 +15,11 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
 }).format(date);
 ---
 
-<a href={`/notes/${note.id}/`} class:list={['note-card', draft && 'note-card--draft']}>
+<a
+  href={`/notes/${note.id}/`}
+  class:list={['note-card', draft && 'note-card--draft']}
+  data-spotlight
+>
   <div class="note-card__top">
     <div class="note-card__date">{dateStr}</div>
     {draft && <span class="note-card__draft">草稿</span>}
@@ -46,7 +50,19 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     overflow: hidden;
   }
+  /* 光标高光:在文字下方,坐标由 BaseLayout 的 data-spotlight 脚本写入 */
   .note-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--spotlight);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+  /* 流光描边。只在 hover 时才跑动画,否则每张卡都在后台空转一层渐变。 */
+  .note-card::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -59,7 +75,7 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
     mask-composite: exclude;
     opacity: 0;
     transition: opacity 0.25s ease;
-    animation: flow-border 4s linear infinite;
+    pointer-events: none;
   }
   .note-card:hover {
     transform: translateY(-3px);
@@ -69,6 +85,10 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
   }
   .note-card:hover::before {
     opacity: 1;
+  }
+  .note-card:hover::after {
+    opacity: 1;
+    animation: flow-border 4s linear infinite;
   }
   .note-card--draft {
     border-style: dashed;

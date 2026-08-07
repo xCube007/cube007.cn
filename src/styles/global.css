@@ -36,6 +36,19 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* 网格底纹:固定在视口后面,向下淡出,避免整页像铺了张壁纸 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--grid);
+  background-size: var(--grid-size) var(--grid-size);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 75%);
+  mask-image: linear-gradient(180deg, #000 0%, transparent 75%);
+}
+
 a {
   color: var(--accent);
   text-decoration: none;
@@ -81,4 +94,21 @@ pre {
   background-clip: text;
   color: transparent;
   animation: flow-text 6s ease infinite;
+}
+
+/* ============================================================================
+   降低动效偏好 —— 流光是点缀,不是内容,关掉不影响任何信息
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

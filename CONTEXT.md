@@ -20,6 +20,7 @@ Cube007 的个人网站:博客(编程/后端/AI 学习笔记)+ 开发小工具,�
 | 托管 | 宝塔 + Nginx + GitHub Actions 自动部署 | 已有 VPS,push main 后 CI 构建并 scp 到 `/www/wwwroot/cube007.cn` |
 | 在线写作 | Sveltia CMS(`/admin/`) + GitHub OAuth 代理 | 管理员 GitHub 登录后在网页写 Markdown,commit 到仓库再由 Actions 部署;前台仍静态 |
 | 后台外观 | 覆盖 Sveltia 的 CSS 变量套上站点配色,不改它的组件 | 变量是未文档化内部实现,只覆盖颜色/字体这层,坏了也只是退回默认配色 |
+| 后台入口 | 页脚一个和正文同色的「写作」链接 | `/admin` 本来就 noindex + robots 禁抓,真正的防线是 OAuth 白名单,所以不做暗号;同色不抢眼,但键盘和读屏都能到 |
 
 ## 领域语言
 
@@ -57,7 +58,9 @@ src/
     prose.css       # 笔记正文排版,文章页与后台预览面板共用
     global.css      # 全局重置、基础排版、工具类
   lib/
-    tools/          # 各工具的纯函数逻辑(JSON 校验、Base64 等),可单测
+    tools/
+      registry.ts   # 工具清单唯一定义点,工具页与首页都从这里渲染
+      ...           # 各工具的纯函数逻辑(JSON 校验、Base64 等),可单测
 ```
 
 **关键约束**
@@ -66,13 +69,16 @@ src/
 - **笔记即文件**:笔记只来自 `src/content/notes/*.md`,没有数据库。
 - **设计 token 单点定义**:颜色/流光动画/间距只在 `tokens.css` 定义,组件只引用 token,不内联写死值。写作后台是第二个消费方,构建前由脚本从同一份生成,不另抄一套。
 - **正文排版单点定义**:笔记正文样式只在 `prose.css` 定义,文章页与后台预览面板共用。
+- **工具清单单点定义**:工具的 slug/名称/描述只在 `src/lib/tools/registry.ts` 登记,工具页和首页都从它渲染,页面里不再手写工具列表。`registry.test.ts` 会扫 `src/pages/tools/` 的目录做交叉校验,漏登记直接测试失败。
+- **动效不空跑**:只在元素可见时才跑动画(比如流光描边挂在 `:hover` 上,不是常驻 `infinite`)。全站尊重 `prefers-reduced-motion`。
 
 ## 设计方向(暗色流光)
 
-- 背景深色(近黑,带极淡噪点或渐变制造层次)。
+- 背景深色(近黑),两层:固定的极淡网格底纹(向下淡出)+ 顶部径向光晕,共同制造纵深。
 - 主文字高对比浅色;次级信息用灰阶。
 - 单一流光强调色,用于标题描边、卡片边框 hover、按钮 —— 不铺满。
 - 流光效果:渐变描边 + 微动 keyframes,克制。
+- 卡片 hover 时有跟随鼠标的光标高光,坐标由 `BaseLayout` 里一段脚本写进 `--mx/--my`,元素只需标 `data-spotlight`。触屏和降低动效偏好下不启用。
 - 代码块语法高亮适配暗色。
 
 ## 非目标
@@ -101,7 +107,7 @@ src/
 
 ## 在线写作后台
 
-- 入口: `/admin/`(Sveltia CMS,静态托管)
+- 入口: `/admin/`(Sveltia CMS,静态托管),前台从页脚「写作」链接进入
 - 配置: `public/admin/config.yml` → GitHub repo `xCube007/cube007.cn`
 - OAuth 代理: `oauth-proxy/`(独立 Node 进程,不进静态 dist)—— 已上线,
   `https://oauth.cube007.cn/health` 可自查

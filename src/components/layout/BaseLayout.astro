@@ -69,6 +69,8 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
         <span>© {new Date().getFullYear()} {siteName}</span>
         <span class="site-footer__dot">·</span>
         <span>暗色流光 · Astro 驱动</span>
+        <span class="site-footer__dot">·</span>
+        <a href="/admin/" class="site-footer__admin" rel="nofollow">写作</a>
       </div>
     </footer>
 
@@ -165,6 +167,13 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
       .site-footer__dot {
         opacity: 0.5;
       }
+      /* 写作后台入口:平时和页脚文字同色,不抢注意力,hover 才亮起来 */
+      .site-footer__admin {
+        color: inherit;
+      }
+      .site-footer__admin:hover {
+        color: var(--accent-3);
+      }
 
       @media (max-width: 600px) {
         .site-header__inner,
@@ -175,5 +184,38 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
         }
       }
     </style>
+
+    <script>
+      // 卡片光标高光:把鼠标位置写成 --mx / --my,由 CSS 的 --spotlight 消费。
+      // 只在有精确指针的设备上开,触屏没有 hover,开了纯属白跑。
+      const canHover = matchMedia('(hover: hover) and (pointer: fine)');
+      const prefersCalm = matchMedia('(prefers-reduced-motion: reduce)');
+
+      if (canHover.matches && !prefersCalm.matches) {
+        let frame = 0;
+        let pending: { card: HTMLElement; x: number; y: number } | null = null;
+
+        const flush = () => {
+          frame = 0;
+          if (!pending) return;
+          const { card, x, y } = pending;
+          const box = card.getBoundingClientRect();
+          card.style.setProperty('--mx', `${((x - box.left) / box.width) * 100}%`);
+          card.style.setProperty('--my', `${((y - box.top) / box.height) * 100}%`);
+        };
+
+        document.addEventListener(
+          'pointermove',
+          (e) => {
+            const target = e.target as Element | null;
+            const card = target?.closest<HTMLElement>('[data-spotlight]');
+            if (!card) return;
+            pending = { card, x: e.clientX, y: e.clientY };
+            if (!frame) frame = requestAnimationFrame(flush);
+          },
+          { passive: true }
+        );
+      }
+    </script>
   </body>
 </html>

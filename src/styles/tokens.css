@@ -46,14 +46,27 @@
   /* ---- 页面光晕:极淡的渐变制造层次,前台与后台登录页共用 ---- */
   --glow: radial-gradient(
       1200px 600px at 80% -10%,
-      color-mix(in srgb, var(--accent) 8%, transparent),
-      transparent 60%
+      color-mix(in srgb, var(--accent) 16%, transparent),
+      transparent 62%
     ),
     radial-gradient(
       900px 500px at 0% 0%,
-      color-mix(in srgb, var(--accent-2) 6%, transparent),
-      transparent 55%
+      color-mix(in srgb, var(--accent-2) 12%, transparent),
+      transparent 58%
     );
+
+  /* ---- 背景网格:给近黑底一点纵深,淡到几乎只在余光里存在 ---- */
+  --grid-size: 34px;
+  --grid-line: color-mix(in srgb, var(--accent) 6%, transparent);
+  --grid: linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+
+  /* ---- 卡片光标高光:hover 时跟随鼠标的一团光 ---- */
+  --spotlight: radial-gradient(
+    260px circle at var(--mx, 50%) var(--my, 0%),
+    color-mix(in srgb, var(--accent) 14%, transparent),
+    transparent 62%
+  );
 
   /* ---- 字号 ---- */
   --fs-xs: 0.75rem;
@@ -113,4 +126,10 @@
 @keyframes flow-line {
   0%, 100% { opacity: 0.5; transform: scaleX(0.9); }
   50% { opacity: 1; transform: scaleX(1); }
+}
+
+/* 指示灯呼吸:首页 eyebrow 前的小圆点 */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }

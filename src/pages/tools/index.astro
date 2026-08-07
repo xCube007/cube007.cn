@@ -1,17 +1,6 @@
 ---
 import BaseLayout from '../../components/layout/BaseLayout.astro';
-
-// M1:工具索引页占位。M2 起,每个工具完成后在此登记一张卡片。
-// 用一个数组驱动渲染,以后加工具只改这里。
-const tools: { slug: string; name: string; desc: string; ready: boolean }[] = [
-  { slug: 'json-formatter', name: 'JSON 格式化', desc: '格式化 / 压缩 / 校验 JSON', ready: true },
-  { slug: 'base64', name: 'Base64 编解码', desc: 'UTF-8 安全的 Base64 互转', ready: true },
-  { slug: 'url-codec', name: 'URL 编解码', desc: '处理中文、空格与特殊符号', ready: true },
-  { slug: 'regex', name: '正则测试', desc: 'pattern + flags,查看匹配与捕获组', ready: true },
-  { slug: 'timestamp', name: '时间戳转换', desc: 'Unix 时间戳 ↔ 日期', ready: true },
-  { slug: 'uuid', name: 'UUID / 密码生成', desc: '生成 UUID v4 与随机密码', ready: true },
-  { slug: 'text-diff', name: '文本对比', desc: '并排对比，行级 + 字符级 Diff', ready: true },
-];
+import { tools } from '../../lib/tools/registry';
 ---
 
 <BaseLayout title="工具" description="Cube007 的开发小工具集合。">
@@ -23,21 +12,13 @@ const tools: { slug: string; name: string; desc: string; ready: boolean }[] = [
 
   <div class="tools-grid">
     {
-      tools.map((t) =>
-        t.ready ? (
-          <a href={`/tools/${t.slug}/`} class="tool-card">
-            <h3 class="tool-card__name">{t.name}</h3>
-            <p class="tool-card__desc">{t.desc}</p>
-            <span class="tool-card__status tool-card__status--ready">可用</span>
-          </a>
-        ) : (
-          <div class="tool-card tool-card--soon">
-            <h3 class="tool-card__name">{t.name}</h3>
-            <p class="tool-card__desc">{t.desc}</p>
-            <span class="tool-card__status tool-card__status--soon">即将上线</span>
-          </div>
-        )
-      )
+      tools.map((t) => (
+        <a href={`/tools/${t.slug}/`} class="tool-card" data-spotlight>
+          <h3 class="tool-card__name">{t.name}</h3>
+          <p class="tool-card__desc">{t.desc}</p>
+          <span class="tool-card__status">可用</span>
+        </a>
+      ))
     }
   </div>
 </BaseLayout>
@@ -87,8 +68,26 @@ const tools: { slug: string; name: string; desc: string; ready: boolean }[] = [
     inset: auto -20% -40% auto;
     width: 120px;
     height: 120px;
-    background: radial-gradient(circle, rgba(95, 240, 224, 0.12), transparent 70%);
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--accent-3) 12%, transparent),
+      transparent 70%
+    );
     pointer-events: none;
+  }
+  /* 光标高光,坐标由 BaseLayout 的 data-spotlight 脚本写入 */
+  .tool-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--spotlight);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+  .tool-card:hover::before {
+    opacity: 1;
   }
   .tool-card:hover {
     transform: translateY(-3px);
@@ -96,10 +95,6 @@ const tools: { slug: string; name: string; desc: string; ready: boolean }[] = [
     box-shadow: var(--shadow);
     color: var(--text-0);
   }
-  .tool-card--soon {
-    opacity: 0.55;
-  }
-
   .tool-card__name {
     font-size: var(--fs-lg);
     margin-bottom: var(--sp-2);
@@ -114,13 +109,7 @@ const tools: { slug: string; name: string; desc: string; ready: boolean }[] = [
     font-family: var(--font-mono);
     padding: var(--sp-1) var(--sp-2);
     border-radius: var(--radius-sm);
-  }
-  .tool-card__status--ready {
     color: var(--ok);
-    background: rgba(74, 222, 128, 0.1);
-  }
-  .tool-card__status--soon {
-    color: var(--text-2);
-    background: var(--bg-2);
+    background: color-mix(in srgb, var(--ok) 10%, transparent);
   }
 </style>
