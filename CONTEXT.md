@@ -19,6 +19,7 @@ Cube007 的个人网站:博客(编程/后端/AI 学习笔记)+ 开发小工具,�
 | 文本对比 | 左/右并排、行级+行内(按字符)、实时、输入框内高亮、同步滚动、行号、自动换行；严格逐字但统一换行；无新旧语义(两色区分左右)；工具栏仅清空两侧+交换；相同行不折叠；窄屏仍并排；用 `diff` 类小库 | 比的是并列材料(接口数据/AI 输出),不是旧→新；先打通最小可用 |
 | 托管 | 宝塔 + Nginx + GitHub Actions 自动部署 | 已有 VPS,push main 后 CI 构建并 scp 到 `/www/wwwroot/cube007.cn` |
 | 在线写作 | Sveltia CMS(`/admin/`) + GitHub OAuth 代理 | 管理员 GitHub 登录后在网页写 Markdown,commit 到仓库再由 Actions 部署;前台仍静态 |
+| 后台外观 | 覆盖 Sveltia 的 CSS 变量套上站点配色,不改它的组件 | 变量是未文档化内部实现,只覆盖颜色/字体这层,坏了也只是退回默认配色 |
 
 ## 领域语言
 
@@ -38,7 +39,7 @@ src/
   pages/
     index.astro         # 时间流首页
     notes/
-      [slug].astro      # 单篇笔记
+      [id].astro        # 单篇笔记
     tools/
       index.astro       # 工具索引页
       json-formatter/   # 各工具一个目录,内含 index.astro + 组件
@@ -52,7 +53,9 @@ src/
     tools/          # 工具卡片、共享 UI(输入框/复制按钮/结果区)
     ui/             # 流光装饰、按钮等通用件
   styles/
-    global.css      # 设计 token(色板/字号/间距/流光动画)
+    tokens.css      # 设计 token(色板/字号/间距/流光动画),前台与写作后台共用
+    prose.css       # 笔记正文排版,文章页与后台预览面板共用
+    global.css      # 全局重置、基础排版、工具类
   lib/
     tools/          # 各工具的纯函数逻辑(JSON 校验、Base64 等),可单测
 ```
@@ -61,7 +64,8 @@ src/
 - **逻辑与界面分离**:每个工具的计算逻辑放进 `src/lib/tools/` 的纯函数,`.astro` 只管调函数和渲染。这样逻辑能单测,UI 改了逻辑不挂。
 - **零运行时后端**:所有计算在浏览器完成。绝不出现 API key、绝不出现服务端调用。
 - **笔记即文件**:笔记只来自 `src/content/notes/*.md`,没有数据库。
-- **设计 token 单点定义**:颜色/流光动画/间距只在 `global.css` 定义,组件只引用 token,不内联写死值。
+- **设计 token 单点定义**:颜色/流光动画/间距只在 `tokens.css` 定义,组件只引用 token,不内联写死值。写作后台是第二个消费方,构建前由脚本从同一份生成,不另抄一套。
+- **正文排版单点定义**:笔记正文样式只在 `prose.css` 定义,文章页与后台预览面板共用。
 
 ## 设计方向(暗色流光)
 
@@ -99,13 +103,16 @@ src/
 
 - 入口: `/admin/`(Sveltia CMS,静态托管)
 - 配置: `public/admin/config.yml` → GitHub repo `xCube007/cube007.cn`
-- OAuth 代理: `oauth-proxy/`(独立 Node 进程,不进静态 dist)
-  - 建议子域 `oauth.cube007.cn` 反代到 `127.0.0.1:8787`
+- OAuth 代理: `oauth-proxy/`(独立 Node 进程,不进静态 dist)—— 已上线,
+  `https://oauth.cube007.cn/health` 可自查
+  - 子域 `oauth.cube007.cn` 反代到 `127.0.0.1:8787`
   - 环境变量: `OAUTH_CLIENT_ID` / `OAUTH_CLIENT_SECRET` / `OAUTH_ALLOWED_USERS=xCube007`
 - 发布路径: CMS Save → GitHub commit → Actions 构建部署
 - 草稿: frontmatter `draft: true` 时生产构建排除
+- 外观: 后台套站点配色,细节见 [ADR 0001](docs/adr/0001-sveltia-theming.md)
+  - `public/admin/index.html` 覆盖 Sveltia 的 `--sui-*` 变量,CDN 版本锁死
+  - `public/admin/{tokens,preview}.css` 由 `npm run sync:admin-theme` 生成,不进版本库
 
 ## 待定问题
 
 - 是否从密码 SSH 切到密钥认证(更稳妥)。
-- OAuth 代理是否已在宝塔上线并完成 GitHub App 回调联调。

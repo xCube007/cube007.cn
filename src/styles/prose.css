@@ -1,0 +1,134 @@
+/* ============================================================================
+   笔记正文排版 —— 站点与写作后台预览面板共用的唯一定义点。
+
+   两个消费方:
+     1. src/pages/notes/[id].astro(真实文章页,正文包在 .note__body 里)
+     2. public/admin/preview.css(构建前生成,容器前缀会被剥掉,见
+        scripts/admin-theme.mjs)
+   所以后台预览看到的排版,就是发布后的排版。
+   ========================================================================== */
+
+.note__body {
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.note__body p {
+  margin-bottom: var(--sp-4);
+  color: var(--text-0);
+}
+
+.note__body h2 {
+  font-size: var(--fs-xl);
+  margin: var(--sp-10) 0 var(--sp-3);
+  padding-top: var(--sp-2);
+  scroll-margin-top: 5rem;
+}
+
+.note__body h3 {
+  font-size: var(--fs-lg);
+  margin: var(--sp-6) 0 var(--sp-2);
+}
+
+.note__body ul,
+.note__body ol {
+  margin: 0 0 var(--sp-4) var(--sp-6);
+  color: var(--text-0);
+}
+
+.note__body li {
+  margin-bottom: var(--sp-2);
+}
+
+.note__body blockquote {
+  border-left: 3px solid var(--accent);
+  padding: var(--sp-3) var(--sp-4);
+  margin: var(--sp-4) 0;
+  color: var(--text-1);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 8%, transparent),
+    transparent 70%
+  );
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.note__body code {
+  background: var(--bg-2);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+  color: var(--accent-3);
+}
+
+.note__body pre {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+  overflow-x: auto;
+  margin: 0;
+}
+
+.note__body pre code {
+  background: none;
+  padding: 0;
+  color: var(--text-0);
+}
+
+.note__body .code-block {
+  position: relative;
+  margin-bottom: var(--sp-4);
+}
+
+.note__body .code-block__copy {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.note__body .code-block:hover .code-block__copy,
+.note__body .code-block__copy:focus {
+  opacity: 1;
+}
+
+.note__body .code-block__copy:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.note__body a {
+  text-underline-offset: 0.15em;
+}
+
+.note__body hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: var(--sp-8) 0;
+}
+
+.note__body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--sp-4);
+  font-size: var(--fs-sm);
+}
+
+.note__body th,
+.note__body td {
+  border: 1px solid var(--border);
+  padding: var(--sp-2) var(--sp-3);
+}
+
+.note__body th {
+  background: var(--bg-1);
+  text-align: left;
+}

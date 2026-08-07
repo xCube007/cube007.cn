@@ -20,7 +20,12 @@ public_folder: /uploads
 # 站点 URL,用于预览链接
 site_url: https://cube007.cn
 display_url: https://cube007.cn
-logo_url: /favicon.svg
+
+# 品牌:不设 app_title 的话登录页和标签页会顶着 "Sveltia CMS"
+app_title: Cube007 写作后台
+logo:
+  src: /favicon.svg
+  show_in_header: true
 
 locale: zh_Hans
 

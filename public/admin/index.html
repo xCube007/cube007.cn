@@ -1,69 +1,242 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-cms-view="entrance">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex,nofollow" />
+    <meta name="theme-color" content="#07080c" />
     <title>Cube007 写作后台</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- 站点设计 token,由 scripts/sync-admin-theme.mjs 从 src/styles/tokens.css 生成 -->
+    <link rel="stylesheet" href="/admin/tokens.css" />
+
     <style>
+      /* ====================================================================
+         把 Sveltia 的 --sui-* 调色板换成站点 token。
+
+         这些变量没有任何官方文档,是 Sveltia UI 的内部实现,维护者明说过
+         "may probably change without notice"(sveltia-cms#29),而且已经整体
+         改过一次名。所以:
+           - 只覆盖颜色/字体/圆角这类纯外观变量,不碰组件 class
+           - CDN 锁死版本(见页面底部),升级时手动回归
+           - 万一某天变量名变了,后台会退回 Sveltia 默认配色,功能不受影响
+
+         选择器写成 :root:root 是为了压过 Sveltia 自己注入的 :root 声明 ——
+         它的样式表在这段之后才插入 <head>,同权重时后来者胜。
+
+         只在暗色主题下生效:后台设置里手动切到 Light 时让它保持原生浅色,
+         而不是套着站点的暗色 token 变成半坏不坏的样子。
+         ==================================================================== */
+      :root:root[data-theme='dark'],
+      :root:root:not([data-theme]) {
+        /* 整套中性色和强调色都由这个色相推导,先把基调掰到站点的冷蓝 */
+        --sui-base-hue: 228;
+
+        --sui-primary-background-color: var(--bg-0);
+        --sui-secondary-background-color: var(--bg-1);
+        --sui-tertiary-background-color: var(--bg-2);
+        --sui-content-background-color: var(--bg-0);
+        --sui-code-background-color: var(--bg-2);
+
+        --sui-primary-foreground-color: var(--text-0);
+        --sui-secondary-foreground-color: var(--text-1);
+        --sui-tertiary-foreground-color: var(--text-2);
+
+        --sui-primary-accent-color: var(--accent);
+        --sui-primary-border-color: var(--border);
+        --sui-secondary-border-color: var(--border-strong);
+        --sui-focus-ring-color: var(--accent);
+
+        --sui-error-foreground-color: var(--err);
+        --sui-warning-foreground-color: var(--warn);
+        --sui-success-foreground-color: var(--ok);
+
+        --sui-font-family-default: var(--font-sans);
+        --sui-font-family-monospace: var(--font-mono);
+
+        --sui-control-medium-border-radius: var(--radius-sm);
+        --sui-control-large-border-radius: var(--radius);
+      }
+
+      /* ====================================================================
+         底色与流光
+         ==================================================================== */
       html,
       body {
         margin: 0;
         min-height: 100%;
-        background: #07080c;
-        color: #e8ecf5;
-        font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC",
-          "Microsoft YaHei", sans-serif;
+        font-family: var(--font-sans);
       }
+
+      /* 底色跟着主题走:切到 Light 时让 Sveltia 保持原生浅色,
+         而不是套着站点的暗色 token 变成半坏不坏的样子 */
+      html[data-theme='dark'],
+      html[data-theme='dark'] body,
+      html:not([data-theme]),
+      html:not([data-theme]) body {
+        background-color: var(--bg-0);
+        color: var(--text-0);
+      }
+
+      /* 登录页放开流光,进了后台收回克制 —— 写作时不跟内容抢注意力。
+         光晕用站点同一个 --glow token,不另抄一份。 */
+      html[data-cms-view='entrance'][data-theme='dark'] body,
+      html[data-cms-view='entrance']:not([data-theme]) body {
+        background-image: var(--glow);
+        background-attachment: fixed;
+      }
+
+      /* 让站点的光晕透过 Sveltia 的外壳。外壳底色取自这个变量,所以这里
+         不用去猜它的 class 名。
+
+         选择器权重要压过上面那段主题覆盖(:root:root[data-theme]),
+         写成 html[...] 的话不够,会被盖掉。 */
+      :root:root[data-cms-view='entrance'][data-theme='dark'],
+      :root:root[data-cms-view='entrance']:not([data-theme]) {
+        --sui-primary-background-color: transparent;
+      }
+
+      /* 登录页只有一个 h1,就是 config.yml 里的 app_title */
+      html[data-cms-view='entrance'] h1 {
+        background: var(--flow);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: flow-text 6s ease infinite;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html[data-cms-view='entrance'] h1 {
+          animation: none;
+        }
+      }
+
+      /* ====================================================================
+         启动占位:CDN 拉不到 sveltia-cms.js 时,这是你唯一能看到的东西
+         ==================================================================== */
       .boot {
         max-width: 36rem;
         margin: 20vh auto 0;
-        padding: 0 1.25rem;
+        padding: 0 var(--sp-5);
         text-align: center;
       }
       .boot h1 {
-        font-size: 1.25rem;
+        font-size: var(--fs-xl);
         font-weight: 650;
-        margin: 0 0 0.75rem;
+        margin: 0 0 var(--sp-3);
       }
       .boot p {
-        color: #a8b0c4;
+        color: var(--text-1);
         line-height: 1.6;
         margin: 0;
       }
       .boot code {
-        font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-        color: #5ff0e0;
+        font-family: var(--font-mono);
+        font-size: var(--fs-sm);
+        color: var(--accent-3);
+      }
+      .boot--failed p {
+        color: var(--warn);
       }
     </style>
   </head>
   <body>
     <div class="boot" id="boot">
       <h1>Cube007 写作后台</h1>
-      <p>
-        正在加载 Sveltia CMS… 若长时间无响应,请确认
-        <code>/admin/config.yml</code> 与 OAuth 代理已配置。
-      </p>
+      <p>正在加载 Sveltia CMS…</p>
     </div>
+
     <!--
-      Sveltia CMS:Decap 兼容的现代后台。
-      用 GitHub 后端 + 自建 OAuth 代理,登录后可在线新建/编辑/发布笔记。
-      文档: https://github.com/sveltia/sveltia-cms
+      Sveltia CMS:Decap 兼容的现代后台。GitHub 后端 + 自建 OAuth 代理,
+      登录后可在线新建/编辑/发布笔记。文档: https://sveltiacms.app
+
+      版本锁死,不用 latest:上面那套 --sui-* 覆盖依赖未文档化的变量名,
+      Sveltia 还在 1.0 之前、一周发好几个版本,minor 版本里就可能有破坏性
+      改动。升级时改这里的版本号,然后人工看一眼后台配色有没有走样。
+      升级前先扫一遍 https://github.com/sveltia/sveltia-cms/releases
+
+      integrity 是这个版本的哈希:这段脚本跑起来就握着管理员的 GitHub 写权
+      限,CDN 被投毒等于仓库被投毒。改版本号时必须同时换掉哈希,否则脚本会
+      被浏览器拒绝执行(后台会显示"加载失败")。取哈希:
+        curl -sL <url> | openssl dgst -sha384 -binary | openssl base64 -A
     -->
-    <script src="https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js"></script>
     <script>
-      // CMS 接管页面后隐藏启动提示
-      window.addEventListener('load', () => {
+      // 手动初始化,好在 init 之前把预览样式注册进去
+      window.CMS_MANUAL_INIT = true;
+    </script>
+    <script
+      src="https://unpkg.com/@sveltia/cms@0.181.1/dist/sveltia-cms.js"
+      integrity="sha384-56C5raxd/5XdH4pb8zeqvfejo4JFZEVSmBt5/IqeNDxSrjUve6rHPOl3fz1LXHWf"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      (() => {
         const boot = document.getElementById('boot');
-        if (boot) {
-          window.setTimeout(() => {
-            // 若 CMS 已注入根节点则移除 boot
-            if (document.getElementById('nc-root') || document.querySelector('[data-svelte-h]')) {
-              boot.remove();
-            }
-          }, 1500);
+        const root = document.documentElement;
+
+        if (!window.CMS) {
+          boot.classList.add('boot--failed');
+          boot.querySelector('p').innerHTML =
+            '加载失败:取不到 <code>sveltia-cms.js</code>。检查网络能否访问 unpkg.com。';
+          return;
         }
-      });
+
+        // 预览面板用站点自己的正文样式,所见即所得。
+        // 生成自 src/styles/{tokens,prose}.css,见 scripts/sync-admin-theme.mjs
+        window.CMS.registerPreviewStyle('/admin/preview.css');
+
+        // 只有确认在登录页时才放开流光。判断走 ARIA role + hash 路由,不碰
+        // class 名 —— Sveltia 的 class 带编译期 hash,官方还计划换掉 Svelte。
+        //
+        // 两个方向的误判不对等:误判成 app,登录页少个光晕而已;误判成
+        // entrance,整个后台的外壳会变透明、每个 h1 都开始流光,正好违背
+        // "流光仅作点缀"。所以默认 app,只有正面证据齐了才切 entrance。
+        const APP_MARKERS =
+          '[role="toolbar"], [role="navigation"], [role="menubar"], [role="tablist"], [role="grid"], [role="feed"], [role="main"], main';
+
+        const isEntrance = () =>
+          !document.querySelector(APP_MARKERS) &&
+          // 登录后 Sveltia 走 hash 路由(#/collections/...),登录页没有
+          !/^#\/./.test(location.hash);
+
+        // CMS 接管页面后清掉启动占位,并判断当前是登录页还是后台内页
+        const sync = () => {
+          const mounted = [...document.body.children].some(
+            (el) => el !== boot && el.tagName !== 'SCRIPT'
+          );
+          if (mounted && boot.isConnected) boot.remove();
+
+          root.dataset.cmsView = mounted && isEntrance() ? 'entrance' : 'app';
+        };
+
+        // 编辑器里每敲一个字都会触发 DOM 变更,这里合并一下,免得在打字路径
+        // 上反复跑选择器查询。用 setTimeout 而不是 requestAnimationFrame ——
+        // rAF 在后台标签页不触发,那样在别的标签页打开后台就一直停在"正在加载"。
+        let queued = 0;
+        const scheduleSync = () => {
+          clearTimeout(queued);
+          queued = setTimeout(sync, 100);
+        };
+
+        new MutationObserver(scheduleSync).observe(document.body, {
+          childList: true,
+          subtree: true,
+        });
+        window.addEventListener('hashchange', scheduleSync);
+
+        window.CMS.init();
+        sync();
+
+        // CMS 起不来时别把"正在加载"永远挂在那儿
+        window.setTimeout(() => {
+          if (!boot.isConnected) return;
+          boot.classList.add('boot--failed');
+          boot.querySelector('p').innerHTML =
+            '一直没起来。确认 <code>/admin/config.yml</code> 可访问,且 OAuth 代理在线。';
+        }, 15000);
+      })();
     </script>
   </body>
 </html>

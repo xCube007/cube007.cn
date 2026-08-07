@@ -1,5 +1,8 @@
 # build output
 dist/
+# 后台主题:由 scripts/sync-admin-theme.mjs 从 src/styles/ 生成
+public/admin/tokens.css
+public/admin/preview.css
 # generated types
 .astro/
 # dependencies

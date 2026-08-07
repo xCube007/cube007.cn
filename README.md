@@ -76,7 +76,9 @@ src/
   lib/tools/         # 工具的纯函数逻辑 + 单测(逻辑与界面分离)
   pages/             # 路由:笔记 / 标签 / 工具
   components/        # 布局、笔记卡片、共享工具 UI
-  styles/global.css  # 设计 token 唯一定义点(颜色/流光/间距)
+  styles/tokens.css  # 设计 token 唯一定义点(颜色/流光动画/间距),前台与后台共用
+  styles/prose.css   # 笔记正文排版,文章页与后台预览面板共用
+  styles/global.css  # 全局重置、基础排版、工具类
 ```
 
 ## 写一篇新笔记
@@ -154,5 +156,6 @@ draft: true
 ## 设计约定
 
 - **逻辑与界面分离**:每个工具的计算逻辑是 `src/lib/tools/` 下的纯函数,UI 只管调用与渲染,逻辑可单测。
-- **设计 token 单点定义**:颜色、流光动画、间距只在 `global.css` 定义,组件只引用 `var(--xxx)`,不内联写死。
+- **设计 token 单点定义**:颜色、流光动画、间距只在 `styles/tokens.css` 定义,组件只引用 `var(--xxx)`,不内联写死。写作后台的配色也从这一份生成(`npm run sync:admin-theme`,dev/build 前自动跑),所以前台和后台不会各走各的。
+- **正文排版单点定义**:笔记正文样式在 `styles/prose.css`,文章页和后台预览面板共用同一份 —— 后台里看到的排版就是发布后的排版。
 - **前台零运行时后端**:访客侧全是静态文件;仅管理员写作走 GitHub API + 独立 OAuth 代理。
