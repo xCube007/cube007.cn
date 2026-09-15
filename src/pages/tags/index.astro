@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../components/layout/BaseLayout.astro';
+import TagChip from '../../components/notes/TagChip.astro';
 import { getVisibleNotes } from '../../lib/notes';
 
 // 收集所有标签 + 每个标签的笔记数(开发环境含草稿)
@@ -22,18 +23,11 @@ const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
 
   <ul class="tag-list">
     {
-      tags.map(([tag, count]) => {
-        const max = tags[0]?.[1] ?? 1;
-        const scale = 0.9 + (count / max) * 0.7;
-        return (
-          <li>
-            <a href={`/tags/${tag}/`} class="tag" style={`font-size: ${scale}rem`}>
-              <span class="tag__name">#{tag}</span>
-              <span class="tag__count">{count}</span>
-            </a>
-          </li>
-        );
-      })
+      tags.map(([tag, count]) => (
+        <li>
+          <TagChip name={tag} count={count} href={`/tags/${tag}/`} />
+        </li>
+      ))
     }
   </ul>
 </BaseLayout>
@@ -48,27 +42,7 @@ const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
     list-style: none;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sp-3);
-  }
-  .tag {
-    display: inline-flex;
     align-items: center;
-    gap: var(--sp-2);
-    padding: var(--sp-2) var(--sp-4);
-    border-radius: 999px;
-    background: var(--bg-1);
-    border: 1px solid var(--border);
-    color: var(--accent);
-    font-family: var(--font-mono);
-    transition: border-color 0.15s ease, transform 0.15s ease;
-  }
-  .tag:hover {
-    color: var(--accent);
-    border-color: var(--accent);
-    transform: translateY(-1px);
-  }
-  .tag__count {
-    color: var(--text-2);
-    font-size: var(--fs-xs);
+    gap: var(--sp-3);
   }
 </style>

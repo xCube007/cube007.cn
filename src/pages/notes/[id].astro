@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../components/layout/BaseLayout.astro';
+import TagChip from '../../components/notes/TagChip.astro';
 import '../../styles/prose.css';
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import { estimateReadingMinutes } from '../../lib/reading-time';
@@ -98,7 +99,7 @@ const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n
           <ul class="note__tags">
             {tags.map((t) => (
               <li>
-                <a href={`/tags/${t}/`}>#{t}</a>
+                <TagChip name={t} href={`/tags/${t}/`} size="sm" />
               </li>
             ))}
           </ul>
@@ -283,19 +284,10 @@ const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n
     list-style: none;
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--sp-2);
     margin-left: auto;
   }
-  .note__tags a {
-    color: var(--accent);
-    font-family: var(--font-mono);
-    font-size: var(--fs-xs);
-    padding: 0.15rem 0.45rem;
-    border-radius: 999px;
-    background: rgba(109, 139, 255, 0.08);
-    border: 1px solid rgba(109, 139, 255, 0.18);
-  }
-  .note__tags a:hover { border-color: var(--accent); }
 
   .note__toc {
     margin-bottom: var(--sp-8);
