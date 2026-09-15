@@ -36,6 +36,18 @@ export const tools: Tool[] = [
     desc: '处理中文、空格与特殊符号',
   },
   {
+    slug: 'hash',
+    name: '哈希 / HMAC',
+    short: '哈希',
+    desc: 'SHA 系列与 HMAC,支持文本和文件',
+  },
+  {
+    slug: 'jwt',
+    name: 'JWT 解码',
+    short: 'JWT',
+    desc: '解码 header / payload,不校验签名',
+  },
+  {
     slug: 'regex',
     name: '正则测试',
     short: '正则',

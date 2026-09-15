@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../../components/layout/BaseLayout.astro';
-import { tools } from '../../lib/tools/registry';
+import { tools, toolsSummary } from '../../lib/tools/registry';
 ---
 
 <BaseLayout title="工具" description="Cube007 的开发小工具集合。">
@@ -8,12 +8,14 @@ import { tools } from '../../lib/tools/registry';
     <p class="hero__eyebrow">Dev Tools</p>
     <h1 class="hero__title">开发小工具</h1>
     <p class="hero__sub">纯前端、零上传、打开即用。</p>
+    <p class="hero__list">{toolsSummary()}</p>
   </section>
 
   <div class="tools-grid">
     {
       tools.map((t) => (
         <a href={`/tools/${t.slug}/`} class="tool-card" data-spotlight>
+          <span class="tool-card__kicker">{t.short}</span>
           <h3 class="tool-card__name">{t.name}</h3>
           <p class="tool-card__desc">{t.desc}</p>
           <span class="tool-card__status">可用</span>
@@ -38,10 +40,19 @@ import { tools } from '../../lib/tools/registry';
   .hero__title {
     font-size: var(--fs-3xl);
     margin-bottom: var(--sp-4);
+    letter-spacing: -0.03em;
   }
   .hero__sub {
     color: var(--text-1);
     font-size: var(--fs-lg);
+    max-width: 44rem;
+  }
+  .hero__list {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    font-family: var(--font-mono);
+    margin-top: var(--sp-3);
+    max-width: 44rem;
   }
 
   .tools-grid {
@@ -52,6 +63,8 @@ import { tools } from '../../lib/tools/registry';
 
   .tool-card {
     position: relative;
+    display: grid;
+    align-content: start;
     padding: var(--sp-6);
     border-radius: var(--radius);
     background:
@@ -95,6 +108,13 @@ import { tools } from '../../lib/tools/registry';
     box-shadow: var(--shadow);
     color: var(--text-0);
   }
+  .tool-card__kicker {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    margin-bottom: var(--sp-2);
+  }
   .tool-card__name {
     font-size: var(--fs-lg);
     margin-bottom: var(--sp-2);
@@ -105,6 +125,7 @@ import { tools } from '../../lib/tools/registry';
     margin-bottom: var(--sp-4);
   }
   .tool-card__status {
+    justify-self: start;
     font-size: var(--fs-xs);
     font-family: var(--font-mono);
     padding: var(--sp-1) var(--sp-2);

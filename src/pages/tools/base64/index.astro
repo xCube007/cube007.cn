@@ -1,15 +1,15 @@
 ---
-import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import ToolLayout from '../../../components/layout/ToolLayout.astro';
 import { encodeBase64, decodeBase64 } from '../../../lib/tools/base64';
 void [encodeBase64, decodeBase64];
 ---
 
-<BaseLayout title="Base64 编解码" description="UTF-8 安全的 Base64 在线编解码,支持中文与 emoji。">
-  <section class="tool-head">
-    <a href="/tools/" class="tool-back">← 所有工具</a>
-    <h1 class="tool-title">Base64 编解码</h1>
-    <p class="tool-desc">UTF-8 安全,中文/emoji 不乱码。纯浏览器运行。</p>
-  </section>
+<ToolLayout
+  slug="base64"
+  title="Base64 编解码"
+  description="UTF-8 安全,中文/emoji 不乱码。纯浏览器运行。"
+  pageDescription="UTF-8 安全的 Base64 在线编解码,支持中文与 emoji。"
+>
 
   <div class="tool">
     <div class="tool__bar">
@@ -35,7 +35,7 @@ void [encodeBase64, decodeBase64];
 
     <p id="status" class="tool__status" role="status"></p>
   </div>
-</BaseLayout>
+</ToolLayout>
 
 <script>
   import '../../../components/tools/copy-button.ts';
@@ -73,10 +73,6 @@ void [encodeBase64, decodeBase64];
 </script>
 
 <style>
-  .tool-head { margin-bottom: var(--sp-8); }
-  .tool-back { color: var(--text-2); font-size: var(--fs-sm); }
-  .tool-title { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); }
-  .tool-desc { color: var(--text-1); }
   .tool { display: grid; gap: var(--sp-4); }
 
   .b64__cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }

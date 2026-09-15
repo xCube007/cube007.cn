@@ -1,18 +1,17 @@
 ---
-import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import ToolLayout from '../../../components/layout/ToolLayout.astro';
 import { formatJson, minifyJson, validateJson } from '../../../lib/tools/json';
 
 // 引用一下确保 tree-shaking 不会丢,且让这一页的"逻辑来源"显式可追溯
 void [formatJson, minifyJson, validateJson];
 ---
 
-<BaseLayout title="JSON 格式化" description="在线 JSON 格式化、压缩与校验工具。">
-  <section class="tool-head">
-    <a href="/tools/" class="tool-back">← 所有工具</a>
-    <h1 class="tool-title">JSON 格式化</h1>
-    <p class="tool-desc">格式化、压缩或校验 JSON。纯浏览器运行,数据不上传。</p>
-  </section>
-
+<ToolLayout
+  slug="json-formatter"
+  title="JSON 格式化"
+  description="格式化、压缩或校验 JSON。纯浏览器运行,数据不上传。"
+  pageDescription="在线 JSON 格式化、压缩与校验工具。"
+>
   <div class="tool">
     <div class="tool__input-wrap">
       <textarea
@@ -29,6 +28,8 @@ void [formatJson, minifyJson, validateJson];
         <button type="button" data-action="format">格式化</button>
         <button type="button" data-action="minify">压缩</button>
         <button type="button" data-action="validate">校验</button>
+        <button type="button" data-action="sample" class="ghost">填入示例</button>
+        <button type="button" data-action="apply" class="ghost">回填到输入</button>
         <button type="button" data-action="clear" class="ghost">清空</button>
       </div>
       <label class="tool__indent">
@@ -48,7 +49,7 @@ void [formatJson, minifyJson, validateJson];
 
     <p id="status" class="tool__status" role="status"></p>
   </div>
-</BaseLayout>
+</ToolLayout>
 
 <script>
   import '../../../components/tools/copy-button.ts';
@@ -99,6 +100,29 @@ void [formatJson, minifyJson, validateJson];
       return;
     }
 
+    if (action === 'sample') {
+      input.value = `{
+  "name": "cube007",
+  "tags": ["后端", "AI"],
+  "ok": true
+}`;
+      status.textContent = '已填入示例';
+      status.className = 'tool__status tool__status--ok';
+      return;
+    }
+
+    if (action === 'apply') {
+      const text = output.textContent ?? '';
+      if (!text) {
+        showErr('没有可回填的输出');
+        return;
+      }
+      input.value = text;
+      status.textContent = '已回填到输入';
+      status.className = 'tool__status tool__status--ok';
+      return;
+    }
+
     const value = input.value;
     if (action === 'format') {
       const r = formatJson(value, indentValue() as number);
@@ -116,21 +140,6 @@ void [formatJson, minifyJson, validateJson];
 </script>
 
 <style>
-  .tool-head {
-    margin-bottom: var(--sp-8);
-  }
-  .tool-back {
-    color: var(--text-2);
-    font-size: var(--fs-sm);
-  }
-  .tool-title {
-    font-size: var(--fs-2xl);
-    margin: var(--sp-4) 0 var(--sp-2);
-  }
-  .tool-desc {
-    color: var(--text-1);
-  }
-
   .tool {
     display: grid;
     gap: var(--sp-4);

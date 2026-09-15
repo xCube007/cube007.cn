@@ -15,7 +15,7 @@ import BaseLayout from '../components/layout/BaseLayout.astro';
         <h2>这个站是什么</h2>
         <p>
           一个纯静态个人站:Markdown 写笔记,Git 即发布,GitHub Actions 自动部署到自己的服务器。
-          不追求大而全,只把日常真正会用到的东西放进来。
+          不追求大而全,只把日常真正会用到的东西放进来。任意页面按 <kbd>/</kbd> 或 Ctrl/⌘ K 可快捷搜索笔记和工具。
         </p>
       </article>
       <article class="about__card">
@@ -84,5 +84,13 @@ import BaseLayout from '../components/layout/BaseLayout.astro';
     list-style: none;
     display: grid;
     gap: var(--sp-2);
+  }
+  kbd {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    padding: 0.1rem 0.35rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    color: var(--text-0);
   }
 </style>

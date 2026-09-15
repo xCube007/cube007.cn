@@ -6,6 +6,13 @@ import { tools, toolsSummary } from '../lib/tools/registry';
 
 // 时间流:按日期倒序;开发环境含草稿,生产构建排除
 const notes = await getVisibleNotes();
+const tagCounts = new Map<string, number>();
+for (const note of notes) {
+  for (const tag of note.data.tags) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+}
+const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
 ---
 
 <BaseLayout>
@@ -17,6 +24,24 @@ const notes = await getVisibleNotes();
     <p class="hero__sub">
       记录后端与 AI 的学习过程,顺手放一些日常用得上的开发小工具。
     </p>
+    <dl class="hero__stats">
+      <div>
+        <dt>笔记</dt>
+        <dd>{notes.length}</dd>
+      </div>
+      <div>
+        <dt>工具</dt>
+        <dd>{tools.length}</dd>
+      </div>
+      <div>
+        <dt>标签</dt>
+        <dd>{tags.length}</dd>
+      </div>
+    </dl>
+    <div class="hero__actions">
+      <a class="btn btn--primary" href="/tools/">打开工具</a>
+      <a class="btn btn--ghost" href="/search/">搜索笔记</a>
+    </div>
     <div class="hero__line"></div>
   </section>
 
@@ -36,16 +61,44 @@ const notes = await getVisibleNotes();
     }
   </section>
 
+  {
+    tags.length > 0 && (
+      <section class="home-tags">
+        <div class="section-head">
+          <h2 class="section-title">标签</h2>
+          <a class="section-link" href="/tags/">
+            全部标签 →
+          </a>
+        </div>
+        <div class="home-tags__list">
+          {tags.map(([tag, count]) => (
+            <a href={`/tags/${tag}/`}>
+              #{tag}
+              <span>{count}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
   <section class="tools-teaser">
     <div class="section-head">
       <h2 class="section-title">开发小工具</h2>
       <a class="section-link" href="/tools/">全部工具 →</a>
     </div>
     <p class="tools-teaser__desc">
-      {toolsSummary()} —— 纯浏览器运行,数据不上传。
+      {toolsSummary()} —— 纯浏览器运行,数据不上传。按 <kbd>/</kbd> 可快捷搜索。
     </p>
     <div class="tools-teaser__grid">
-      {tools.map((t) => <a href={`/tools/${t.slug}/`}>{t.short}</a>)}
+      {
+        tools.map((t) => (
+          <a href={`/tools/${t.slug}/`} class="tools-teaser__card" data-spotlight>
+            <span class="tools-teaser__name">{t.name}</span>
+            <span class="tools-teaser__desc-card">{t.desc}</span>
+          </a>
+        ))
+      }
     </div>
   </section>
 </BaseLayout>
@@ -77,13 +130,51 @@ const notes = await getVisibleNotes();
     animation: pulse-dot 2.4s ease-in-out infinite;
   }
   .hero__title {
-    font-size: var(--fs-3xl);
+    font-size: clamp(2rem, 5vw, 3rem);
     margin-bottom: var(--sp-4);
+    letter-spacing: -0.03em;
   }
   .hero__sub {
     color: var(--text-1);
     font-size: var(--fs-lg);
     max-width: 40rem;
+  }
+  .hero__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-6);
+    margin: var(--sp-6) 0 var(--sp-5);
+  }
+  .hero__stats div {
+    min-width: 4.5rem;
+  }
+  .hero__stats dt {
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: var(--sp-1);
+  }
+  .hero__stats dd {
+    font-size: var(--fs-2xl);
+    font-weight: 650;
+    letter-spacing: -0.03em;
+    color: var(--text-0);
+  }
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+  }
+  .hero__actions kbd,
+  .tools-teaser__desc kbd {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    padding: 0.1rem 0.35rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    color: var(--text-1);
   }
   /* 流光点缀:hero 下的呼吸光带 */
   .hero__line {
@@ -126,6 +217,33 @@ const notes = await getVisibleNotes();
     gap: var(--sp-4);
   }
 
+  .home-tags {
+    margin-top: var(--sp-12);
+  }
+  .home-tags__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+  }
+  .home-tags__list a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-1);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+  }
+  .home-tags__list a:hover {
+    border-color: var(--accent);
+  }
+  .home-tags__list span {
+    color: var(--text-2);
+  }
+
   .tools-teaser {
     position: relative;
     overflow: hidden;
@@ -159,23 +277,34 @@ const notes = await getVisibleNotes();
     max-width: 44rem;
   }
   .tools-teaser__grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--sp-2);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--sp-3);
   }
-  .tools-teaser__grid a {
-    display: inline-flex;
-    padding: 0.35rem 0.7rem;
-    border-radius: 999px;
+  .tools-teaser__card {
+    position: relative;
+    display: grid;
+    gap: var(--sp-1);
+    padding: var(--sp-4);
+    border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     background: var(--bg-2);
-    color: var(--text-1);
-    font-size: var(--fs-xs);
-    font-family: var(--font-mono);
+    color: var(--text-0);
+    overflow: hidden;
+    transition: border-color 0.15s ease, transform 0.15s ease;
   }
-  .tools-teaser__grid a:hover {
+  .tools-teaser__card:hover {
     border-color: var(--accent);
-    color: var(--accent);
+    transform: translateY(-2px);
+    color: var(--text-0);
+  }
+  .tools-teaser__name {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+  }
+  .tools-teaser__desc-card {
+    color: var(--text-2);
+    font-size: var(--fs-xs);
   }
 
   .empty {

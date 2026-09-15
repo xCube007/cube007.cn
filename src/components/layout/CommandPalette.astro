@@ -1,0 +1,270 @@
+---
+import { getVisibleNotes } from '../../lib/notes';
+import { tools } from '../../lib/tools/registry';
+import { buildPalette } from '../../lib/palette';
+
+const notes = await getVisibleNotes();
+const items = buildPalette({
+  tools,
+  notes: notes.map((n) => ({
+    title: n.data.title,
+    href: `/notes/${n.id}/`,
+    hint: [n.data.description ?? '', ...n.data.tags].filter(Boolean).join(' '),
+  })),
+});
+---
+
+<dialog id="cmdk" class="cmdk" aria-label="快捷搜索">
+  <div class="cmdk__box">
+    <label class="cmdk__search">
+      <span class="sr-only">快捷搜索</span>
+      <input
+        id="cmdk-q"
+        type="search"
+        placeholder="搜索笔记、工具、页面…"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </label>
+    <ul id="cmdk-list" class="cmdk__list" role="listbox"></ul>
+    <p class="cmdk__hint">↑↓ 选择 · Enter 打开 · Esc 关闭</p>
+  </div>
+</dialog>
+
+<script id="palette-data" type="application/json" set:html={JSON.stringify(items)} />
+
+<script>
+  import { filterPalette, type PaletteItem } from '../../lib/palette';
+
+  const dialog = document.getElementById('cmdk') as HTMLDialogElement;
+  const input = document.getElementById('cmdk-q') as HTMLInputElement;
+  const list = document.getElementById('cmdk-list') as HTMLUListElement;
+  const raw = document.getElementById('palette-data')?.textContent ?? '[]';
+  const items = JSON.parse(raw) as PaletteItem[];
+
+  let selected = 0;
+
+  function isTypingTarget(el: EventTarget | null): boolean {
+    if (!(el instanceof HTMLElement)) return false;
+    if (el.isContentEditable) return true;
+    const tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  }
+
+  function escapeHtml(s: string): string {
+    return s
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;');
+  }
+
+  function render() {
+    const hits = filterPalette(items, input.value);
+    if (selected >= hits.length) selected = Math.max(0, hits.length - 1);
+    if (hits.length === 0) {
+      list.innerHTML = `<li class="cmdk__empty">没有匹配结果</li>`;
+      return;
+    }
+    list.innerHTML = hits
+      .map(
+        (item, i) => `
+      <li>
+        <a
+          class="cmdk__item${i === selected ? ' is-active' : ''}"
+          href="${escapeHtml(item.href)}"
+          data-index="${i}"
+          role="option"
+          aria-selected="${i === selected ? 'true' : 'false'}"
+        >
+          <span class="cmdk__kind">${escapeHtml(item.kind)}</span>
+          <span class="cmdk__title">${escapeHtml(item.title)}</span>
+          ${item.hint ? `<span class="cmdk__item-hint">${escapeHtml(item.hint)}</span>` : ''}
+        </a>
+      </li>`
+      )
+      .join('');
+  }
+
+  function openPalette() {
+    if (!dialog.open) dialog.showModal();
+    input.value = '';
+    selected = 0;
+    render();
+    input.focus();
+  }
+
+  function closePalette() {
+    if (dialog.open) dialog.close();
+  }
+
+  function goSelected() {
+    const active = list.querySelector<HTMLAnchorElement>('.cmdk__item.is-active');
+    if (active?.href) {
+      closePalette();
+      location.href = active.href;
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    const metaK = (e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey);
+    const slash = e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey;
+
+    if (metaK) {
+      e.preventDefault();
+      dialog.open ? closePalette() : openPalette();
+      return;
+    }
+    if (slash && !isTypingTarget(e.target) && !dialog.open) {
+      e.preventDefault();
+      openPalette();
+      return;
+    }
+    if (!dialog.open) return;
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closePalette();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selected += 1;
+      render();
+      list.querySelector('.cmdk__item.is-active')?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selected = Math.max(0, selected - 1);
+      render();
+      list.querySelector('.cmdk__item.is-active')?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      goSelected();
+    }
+  });
+
+  input.addEventListener('input', () => {
+    selected = 0;
+    render();
+  });
+
+  list.addEventListener('mousemove', (e) => {
+    const item = (e.target as HTMLElement).closest<HTMLAnchorElement>('[data-index]');
+    if (!item) return;
+    const i = Number(item.dataset.index);
+    if (i === selected) return;
+    selected = i;
+    render();
+  });
+
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) closePalette();
+  });
+
+  document.querySelectorAll('[data-open-palette]').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      openPalette();
+    });
+  });
+</script>
+
+<style>
+  .cmdk {
+    position: fixed;
+    top: 16vh;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    width: min(36rem, calc(100vw - 2rem));
+    max-height: min(28rem, 80vh);
+    padding: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--bg-1);
+    color: var(--text-0);
+    box-shadow: var(--shadow);
+  }
+  .cmdk::backdrop {
+    background: rgba(7, 8, 12, 0.72);
+    backdrop-filter: blur(6px);
+  }
+  .cmdk__box {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    max-height: min(28rem, 80vh);
+  }
+  .cmdk__search {
+    display: block;
+    border-bottom: 1px solid var(--border);
+  }
+  .cmdk__search input {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    color: var(--text-0);
+    font-size: var(--fs-lg);
+    padding: var(--sp-4) var(--sp-5);
+    outline: none;
+  }
+  .cmdk__list {
+    list-style: none;
+    overflow: auto;
+    padding: var(--sp-2);
+    min-height: 8rem;
+  }
+  .cmdk__item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: var(--sp-3);
+    row-gap: 0.1rem;
+    padding: var(--sp-3) var(--sp-3);
+    border-radius: var(--radius-sm);
+    color: var(--text-0);
+  }
+  .cmdk__item.is-active {
+    background: color-mix(in srgb, var(--accent) 14%, var(--bg-2));
+    color: var(--text-0);
+  }
+  .cmdk__kind {
+    grid-row: 1 / span 2;
+    align-self: center;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--accent);
+    min-width: 2.5rem;
+  }
+  .cmdk__title {
+    font-size: var(--fs-sm);
+  }
+  .cmdk__item-hint {
+    grid-column: 2;
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cmdk__empty {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    padding: var(--sp-6) var(--sp-3);
+    text-align: center;
+  }
+  .cmdk__hint {
+    border-top: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+    padding: var(--sp-2) var(--sp-4);
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>

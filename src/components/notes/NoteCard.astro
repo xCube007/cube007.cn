@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import { estimateReadingMinutes } from '../../lib/reading-time';
 
 interface Props {
   note: CollectionEntry<'notes'>;
@@ -7,6 +8,8 @@ interface Props {
 
 const { note } = Astro.props;
 const { title, date, tags, description, draft } = note.data;
+const body = typeof note.body === 'string' ? note.body : '';
+const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n'));
 
 const dateStr = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric',
@@ -21,7 +24,11 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
   data-spotlight
 >
   <div class="note-card__top">
-    <div class="note-card__date">{dateStr}</div>
+    <div class="note-card__date">
+      {dateStr}
+      <span class="note-card__sep">·</span>
+      {minutes} 分钟
+    </div>
     {draft && <span class="note-card__draft">草稿</span>}
   </div>
   <h3 class="note-card__title">{title}</h3>
@@ -105,6 +112,10 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
     color: var(--text-2);
     font-size: var(--fs-xs);
     font-family: var(--font-mono);
+  }
+  .note-card__sep {
+    opacity: 0.5;
+    margin: 0 0.35em;
   }
   .note-card__draft {
     color: var(--warn);

@@ -15,7 +15,7 @@ Cube007 的个人网站:博客(编程/后端/AI 学习笔记)+ 开发小工具,�
 | 内容组织 | 统一时间流 + 标签 | 三个主题(编程/后端/AI)用标签区分,不设硬分区,写什么放什么 |
 | 博客/工具关系 | 并列两个顶级区(`/notes` 与 `/tools`) | 各自独立,互不耦合 |
 | 视觉 | 暗色主题,简约流光科技感,流光仅作点缀 | 个性鲜明但不抢内容注意力 |
-| 首发工具 | JSON 格式化/压缩/校验、Base64 编解码、时间戳转换、UUID/密码生成 | 高频、低风险、能验证工具架构跑通 |
+| 首发工具 | JSON 格式化/压缩/校验、Base64 编解码、时间戳转换、UUID/密码生成、哈希/HMAC、JWT 解码 | 高频、低风险、能验证工具架构跑通 |
 | 文本对比 | 左/右并排、行级+行内(按字符)、实时、输入框内高亮、同步滚动、行号、自动换行；严格逐字但统一换行；无新旧语义(两色区分左右)；工具栏仅清空两侧+交换；相同行不折叠；窄屏仍并排；用 `diff` 类小库 | 比的是并列材料(接口数据/AI 输出),不是旧→新；先打通最小可用 |
 | 托管 | 宝塔 + Nginx + GitHub Actions 自动部署 | 已有 VPS,push main 后 CI 构建并 scp 到 `/www/wwwroot/cube007.cn` |
 | 在线写作 | Sveltia CMS(`/admin/`) + GitHub OAuth 代理 | 管理员 GitHub 登录后在网页写 Markdown,commit 到仓库再由 Actions 部署;前台仍静态 |
@@ -45,6 +45,10 @@ src/
       index.astro       # 工具索引页
       json-formatter/   # 各工具一个目录,内含 index.astro + 组件
       base64/
+      url-codec/
+      hash/
+      jwt/
+      regex/
       timestamp/
       uuid/
       text-diff/

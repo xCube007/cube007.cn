@@ -1,15 +1,15 @@
 ---
-import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import ToolLayout from '../../../components/layout/ToolLayout.astro';
 import { timestampToDate, dateToTimestamp, nowSeconds, nowMs } from '../../../lib/tools/timestamp';
 void [timestampToDate, dateToTimestamp, nowSeconds, nowMs];
 ---
 
-<BaseLayout title="时间戳转换" description="Unix 时间戳与日期互转,自动区分秒与毫秒。">
-  <section class="tool-head">
-    <a href="/tools/" class="tool-back">← 所有工具</a>
-    <h1 class="tool-title">时间戳转换</h1>
-    <p class="tool-desc">时间戳 ↔ 日期,自动区分秒/毫秒,默认东八区。</p>
-  </section>
+<ToolLayout
+  slug="timestamp"
+  title="时间戳转换"
+  description="时间戳 ↔ 日期,自动区分秒/毫秒,默认东八区。"
+  pageDescription="Unix 时间戳与日期互转,自动区分秒与毫秒。"
+>
 
   <div class="tool">
     <div class="ts__block">
@@ -35,7 +35,7 @@ void [timestampToDate, dateToTimestamp, nowSeconds, nowMs];
       <div id="date-out" class="ts__result" aria-live="polite"></div>
     </div>
   </div>
-</BaseLayout>
+</ToolLayout>
 
 <script>
   import { timestampToDate, dateToTimestamp, nowSeconds, nowMs } from '../../../lib/tools/timestamp';
@@ -54,21 +54,29 @@ void [timestampToDate, dateToTimestamp, nowSeconds, nowMs];
     dateOut.className = 'ts__result ' + (ok ? 'ts__result--ok' : 'ts__result--err');
   }
 
-  document.getElementById('ts-convert')!.addEventListener('click', () => {
-    const r = timestampToDate(Number(tsInput.value));
+  function convertTs() {
+    const raw = tsInput.value.trim();
+    if (!raw) {
+      tsOut.innerHTML = '';
+      tsOut.className = 'ts__result';
+      return;
+    }
+    const r = timestampToDate(Number(raw));
     if (r.ok) {
       setTs(`<div>${r.output} <span class="ts__tz">(东八区)</span></div>`, true);
     } else {
       setTs('✗ ' + r.error, false);
     }
-  });
+  }
 
-  document.getElementById('ts-now')!.addEventListener('click', () => {
-    tsInput.value = String(nowSeconds());
-  });
-
-  document.getElementById('date-convert')!.addEventListener('click', () => {
-    const r = dateToTimestamp(dateInput.value);
+  function convertDate() {
+    const raw = dateInput.value.trim();
+    if (!raw) {
+      dateOut.innerHTML = '';
+      dateOut.className = 'ts__result';
+      return;
+    }
+    const r = dateToTimestamp(raw);
     if (r.ok) {
       setDate(
         `<div class="ts__pair"><span>秒</span><code>${r.output.seconds}</code></div>` +
@@ -78,14 +86,20 @@ void [timestampToDate, dateToTimestamp, nowSeconds, nowMs];
     } else {
       setDate('✗ ' + r.error, false);
     }
+  }
+
+  document.getElementById('ts-convert')!.addEventListener('click', convertTs);
+  document.getElementById('date-convert')!.addEventListener('click', convertDate);
+  tsInput.addEventListener('input', convertTs);
+  dateInput.addEventListener('input', convertDate);
+
+  document.getElementById('ts-now')!.addEventListener('click', () => {
+    tsInput.value = String(nowSeconds());
+    convertTs();
   });
 </script>
 
 <style>
-  .tool-head { margin-bottom: var(--sp-8); }
-  .tool-back { color: var(--text-2); font-size: var(--fs-sm); }
-  .tool-title { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); }
-  .tool-desc { color: var(--text-1); }
   .tool { display: grid; gap: var(--sp-4); }
 
   .ts__block { display: grid; gap: var(--sp-3); }

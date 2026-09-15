@@ -1,5 +1,6 @@
 ---
 import '../../styles/global.css';
+import CommandPalette from './CommandPalette.astro';
 
 interface Props {
   title?: string;
@@ -12,6 +13,20 @@ const pageTitle = title ? `${title} · ${siteName}` : `${siteName} · 笔记与�
 const desc = description ?? 'Cube007 的个人网站 —— 编程 / 后端 / AI 学习笔记,附开发小工具。';
 const canonical = new URL(Astro.url.pathname, Astro.site).toString();
 const ogImage = new URL('/favicon.svg', Astro.site).toString();
+const path = Astro.url.pathname;
+
+function navActive(href: string): boolean {
+  if (href === '/') return path === '/' || path.startsWith('/notes/');
+  return path === href || path.startsWith(href);
+}
+
+const navItems = [
+  { href: '/', label: '笔记' },
+  { href: '/tags/', label: '标签' },
+  { href: '/tools/', label: '工具' },
+  { href: '/search/', label: '搜索', shortcut: true },
+  { href: '/about/', label: '关于' },
+];
 ---
 
 <!doctype html>
@@ -34,6 +49,12 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={desc} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
     <link
       rel="alternate"
       type="application/rss+xml"
@@ -43,44 +64,86 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
     <title>{pageTitle}</title>
   </head>
   <body>
+    <a class="skip-link" href="#main">跳到正文</a>
     <header class="site-header">
       <div class="site-header__inner">
         <a href="/" class="brand">
           <span class="brand__mark">▮</span>
           <span class="brand__name flow-text">{siteName}</span>
         </a>
-        <nav class="nav">
-          <a href="/">笔记</a>
-          <a href="/tags">标签</a>
-          <a href="/tools">工具</a>
-          <a href="/search">搜索</a>
-          <a href="/about">关于</a>
+        <button
+          type="button"
+          class="nav-toggle"
+          aria-expanded="false"
+          aria-controls="site-nav"
+        >
+          菜单
+        </button>
+        <nav id="site-nav" class="nav">
+          {
+            navItems.map((item) => (
+              <a
+                href={item.href}
+                class:list={[item.shortcut && 'nav__search']}
+                aria-current={navActive(item.href) ? 'page' : undefined}
+              >
+                {item.label}
+                {item.shortcut && <kbd class="nav__kbd">/</kbd>}
+              </a>
+            ))
+          }
           <a href="/rss.xml" class="nav__rss">RSS</a>
         </nav>
       </div>
     </header>
 
-    <main class="site-main">
+    <main id="main" class="site-main">
       <slot />
     </main>
 
     <footer class="site-footer">
       <div class="site-footer__inner">
-        <span>© {new Date().getFullYear()} {siteName}</span>
-        <span class="site-footer__dot">·</span>
-        <span>暗色流光 · Astro 驱动</span>
-        <span class="site-footer__dot">·</span>
-        <a href="/admin/" class="site-footer__admin" rel="nofollow">写作</a>
+        <div class="site-footer__meta">
+          <span>© {new Date().getFullYear()} {siteName}</span>
+          <span class="site-footer__dot">·</span>
+          <span>暗色流光 · Astro 驱动</span>
+        </div>
+        <div class="site-footer__links">
+          <a href="/tools/">工具</a>
+          <a href="/search/">搜索</a>
+          <a href="/rss.xml">RSS</a>
+          <a href="https://github.com/xCube007/cube007.cn" target="_blank" rel="noreferrer">
+            GitHub
+          </a>
+          <a href="/admin/" class="site-footer__admin" rel="nofollow">写作</a>
+        </div>
       </div>
     </footer>
 
+    <CommandPalette />
+
     <style>
+      .skip-link {
+        position: absolute;
+        left: var(--sp-4);
+        top: -3rem;
+        z-index: 30;
+        padding: var(--sp-2) var(--sp-3);
+        background: var(--bg-1);
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-sm);
+        color: var(--text-0);
+      }
+      .skip-link:focus {
+        top: var(--sp-3);
+      }
+
       .site-header {
         position: sticky;
         top: 0;
         z-index: 10;
-        background: rgba(7, 8, 12, 0.72);
-        backdrop-filter: blur(12px);
+        background: rgba(7, 8, 12, 0.78);
+        backdrop-filter: blur(14px);
         border-bottom: 1px solid var(--border);
       }
       .site-header__inner {
@@ -90,6 +153,8 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: var(--sp-4);
+        flex-wrap: wrap;
       }
       .brand {
         display: inline-flex;
@@ -109,6 +174,22 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
       .brand__name {
         font-family: var(--font-mono);
       }
+
+      .nav-toggle {
+        display: none;
+        background: var(--bg-1);
+        border: 1px solid var(--border);
+        color: var(--text-1);
+        font-size: var(--fs-sm);
+        padding: var(--sp-1) var(--sp-3);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+      }
+      .nav-toggle:hover {
+        border-color: var(--accent);
+        color: var(--text-0);
+      }
+
       .nav {
         display: flex;
         gap: var(--sp-5);
@@ -128,6 +209,25 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
         color: var(--text-0);
         border-bottom-color: var(--accent);
       }
+      .nav a[aria-current='page'] {
+        color: var(--text-0);
+        border-bottom-color: var(--accent);
+      }
+      .nav__search {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .nav__kbd {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        font-weight: 500;
+        line-height: 1;
+        padding: 0.15rem 0.35rem;
+        border: 1px solid var(--border-strong);
+        border-radius: 4px;
+        color: var(--text-2);
+      }
       .nav__rss {
         font-family: var(--font-mono);
         font-size: var(--fs-xs);
@@ -138,7 +238,8 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
         border-bottom: 1px solid var(--border) !important;
         color: var(--text-2) !important;
       }
-      .nav__rss:hover {
+      .nav__rss:hover,
+      .nav a.nav__rss[aria-current='page'] {
         color: var(--accent) !important;
         border-color: var(--accent) !important;
       }
@@ -159,10 +260,25 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
         margin: 0 auto;
         padding: var(--sp-6);
         display: flex;
-        gap: var(--sp-2);
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--sp-4);
         flex-wrap: wrap;
         color: var(--text-2);
         font-size: var(--fs-sm);
+      }
+      .site-footer__meta,
+      .site-footer__links {
+        display: flex;
+        gap: var(--sp-2);
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .site-footer__links a {
+        color: var(--text-2);
+      }
+      .site-footer__links a:hover {
+        color: var(--accent);
       }
       .site-footer__dot {
         opacity: 0.5;
@@ -175,12 +291,39 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
         color: var(--accent-3);
       }
 
-      @media (max-width: 600px) {
+      @media (max-width: 760px) {
         .site-header__inner,
         .site-main,
         .site-footer__inner {
           padding-left: var(--sp-4);
           padding-right: var(--sp-4);
+        }
+        .nav-toggle {
+          display: inline-flex;
+        }
+        .nav {
+          display: none;
+          width: 100%;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0;
+        }
+        .nav.is-open {
+          display: flex;
+        }
+        .nav a {
+          padding: var(--sp-3) 0;
+          border-bottom: 1px solid var(--border);
+        }
+        .nav a[aria-current='page'] {
+          border-bottom-color: var(--accent);
+        }
+        .nav__rss {
+          align-self: flex-start;
+          margin-top: var(--sp-2);
+        }
+        .nav__kbd {
+          display: none;
         }
       }
     </style>
@@ -216,6 +359,14 @@ const ogImage = new URL('/favicon.svg', Astro.site).toString();
           { passive: true }
         );
       }
+
+      const toggle = document.querySelector<HTMLButtonElement>('.nav-toggle');
+      const nav = document.getElementById('site-nav');
+      toggle?.addEventListener('click', () => {
+        const open = nav?.classList.toggle('is-open') ?? false;
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        toggle.textContent = open ? '关闭' : '菜单';
+      });
     </script>
   </body>
 </html>

@@ -1,15 +1,15 @@
 ---
-import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import ToolLayout from '../../../components/layout/ToolLayout.astro';
 import { generateUuid, generatePassword } from '../../../lib/tools/uuid';
 void [generateUuid, generatePassword];
 ---
 
-<BaseLayout title="UUID / 密码生成" description="生成 UUID v4 与可定制的随机密码。">
-  <section class="tool-head">
-    <a href="/tools/" class="tool-back">← 所有工具</a>
-    <h1 class="tool-title">UUID / 密码生成</h1>
-    <p class="tool-desc">UUID v4 用 crypto 真随机;密码可定制长度与字符集。</p>
-  </section>
+<ToolLayout
+  slug="uuid"
+  title="UUID / 密码生成"
+  description="UUID v4 用 crypto 真随机;密码可定制长度与字符集。"
+  pageDescription="生成 UUID v4 与可定制的随机密码。"
+>
 
   <div class="tool">
     <div class="uuid__block">
@@ -49,7 +49,7 @@ void [generateUuid, generatePassword];
       <p id="pw-status" class="tool__status" role="status"></p>
     </div>
   </div>
-</BaseLayout>
+</ToolLayout>
 
 <script>
   import '../../../components/tools/copy-button.ts';
@@ -101,10 +101,6 @@ void [generateUuid, generatePassword];
 </script>
 
 <style>
-  .tool-head { margin-bottom: var(--sp-8); }
-  .tool-back { color: var(--text-2); font-size: var(--fs-sm); }
-  .tool-title { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); }
-  .tool-desc { color: var(--text-1); }
   .tool { display: grid; gap: var(--sp-4); }
 
   .uuid__block { display: grid; gap: var(--sp-3); }
