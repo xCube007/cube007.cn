@@ -1,15 +1,15 @@
 ---
-import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import ToolLayout from '../../../components/layout/ToolLayout.astro';
 import { encodeUrl, decodeUrl } from '../../../lib/tools/url';
 void [encodeUrl, decodeUrl];
 ---
 
-<BaseLayout title="URL 编解码" description="URL 编码与解码,处理中文、空格与特殊符号。">
-  <section class="tool-head">
-    <a href="/tools/" class="tool-back">← 所有工具</a>
-    <h1 class="tool-title">URL 编解码</h1>
-    <p class="tool-desc">encodeURIComponent / decodeURIComponent,适合查询参数与 path 片段。</p>
-  </section>
+<ToolLayout
+  slug="url-codec"
+  title="URL 编解码"
+  description="encodeURIComponent / decodeURIComponent,适合查询参数与 path 片段。"
+  pageDescription="URL 编码与解码,处理中文、空格与特殊符号。"
+>
 
   <div class="tool">
     <div class="tool__bar">
@@ -35,7 +35,7 @@ void [encodeUrl, decodeUrl];
 
     <p id="status" class="tool__status" role="status"></p>
   </div>
-</BaseLayout>
+</ToolLayout>
 
 <script>
   import '../../../components/tools/copy-button.ts';
@@ -73,10 +73,6 @@ void [encodeUrl, decodeUrl];
 </script>
 
 <style>
-  .tool-head { margin-bottom: var(--sp-8); }
-  .tool-back { color: var(--text-2); font-size: var(--fs-sm); }
-  .tool-title { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); }
-  .tool-desc { color: var(--text-1); }
   .tool { display: grid; gap: var(--sp-4); }
 
   .url__cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }

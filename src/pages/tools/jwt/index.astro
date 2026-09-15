@@ -1,0 +1,226 @@
+---
+import ToolLayout from '../../../components/layout/ToolLayout.astro';
+import { decodeJwt, SAMPLE_JWT } from '../../../lib/tools/jwt';
+void [decodeJwt, SAMPLE_JWT];
+---
+
+<ToolLayout
+  slug="jwt"
+  title="JWT 解码"
+  description="只解码 header / payload,不校验签名、不上传。适合看接口里的 token 内容。"
+  pageDescription="在线解码 JWT header 与 payload,不校验签名。"
+>
+  <div class="tool">
+    <div class="tool__bar">
+      <div class="tool__actions">
+        <button type="button" id="sample" class="ghost">填入示例</button>
+        <button type="button" id="clear" class="ghost">清空</button>
+      </div>
+    </div>
+    <label class="jwt__label" for="jwt-input">Token</label>
+    <textarea
+      id="jwt-input"
+      class="tool__textarea"
+      placeholder="粘贴 header.payload.signature"
+      spellcheck="false"
+    ></textarea>
+    <p id="status" class="tool__status" role="status"></p>
+    <div id="claims" class="jwt__claims" hidden></div>
+    <div class="jwt__cols">
+      <div class="jwt__col">
+        <div class="jwt__label-row">
+          <span class="jwt__label">Header</span>
+          <copy-button id="copy-header"></copy-button>
+        </div>
+        <pre id="header-out" class="tool__output"></pre>
+      </div>
+      <div class="jwt__col">
+        <div class="jwt__label-row">
+          <span class="jwt__label">Payload</span>
+          <copy-button id="copy-payload"></copy-button>
+        </div>
+        <pre id="payload-out" class="tool__output"></pre>
+      </div>
+    </div>
+  </div>
+</ToolLayout>
+
+<script>
+  import '../../../components/tools/copy-button.ts';
+  import { decodeJwt, SAMPLE_JWT } from '../../../lib/tools/jwt';
+
+  const input = document.getElementById('jwt-input') as HTMLTextAreaElement;
+  const status = document.getElementById('status') as HTMLParagraphElement;
+  const claims = document.getElementById('claims') as HTMLDivElement;
+  const headerOut = document.getElementById('header-out') as HTMLPreElement;
+  const payloadOut = document.getElementById('payload-out') as HTMLPreElement;
+  const copyHeader = document.getElementById('copy-header') as any;
+  const copyPayload = document.getElementById('copy-payload') as any;
+
+  function escapeHtml(s: string): string {
+    return s
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;');
+  }
+
+  function clearOut() {
+    headerOut.textContent = '';
+    payloadOut.textContent = '';
+    copyHeader.setValue('');
+    copyPayload.setValue('');
+    claims.hidden = true;
+    claims.innerHTML = '';
+  }
+
+  function run() {
+    const value = input.value.trim();
+    if (!value) {
+      status.textContent = '';
+      status.className = 'tool__status';
+      clearOut();
+      return;
+    }
+    const r = decodeJwt(value);
+    if (!r.ok) {
+      status.textContent = '✗ ' + r.error;
+      status.className = 'tool__status tool__status--err';
+      clearOut();
+      return;
+    }
+    headerOut.textContent = r.headerJson;
+    payloadOut.textContent = r.payloadJson;
+    copyHeader.setValue(r.headerJson);
+    copyPayload.setValue(r.payloadJson);
+
+    const bits: string[] = [];
+    if (r.claims.iatText) bits.push(`iat ${escapeHtml(r.claims.iatText)}`);
+    if (r.claims.nbfText) bits.push(`nbf ${escapeHtml(r.claims.nbfText)}`);
+    if (r.claims.expText) bits.push(`exp ${escapeHtml(r.claims.expText)}`);
+    if (r.claims.expired) bits.push('已过期');
+    if (r.claims.notYetValid) bits.push('尚未生效');
+
+    if (bits.length) {
+      claims.hidden = false;
+      claims.innerHTML = bits.map((b) => `<span>${b}</span>`).join('');
+    } else {
+      claims.hidden = true;
+      claims.innerHTML = '';
+    }
+
+    status.textContent = r.claims.expired
+      ? '已解码 · 注意 exp 已过期(未校验签名)'
+      : '已解码 · 未校验签名';
+    status.className = r.claims.expired
+      ? 'tool__status tool__status--err'
+      : 'tool__status tool__status--ok';
+  }
+
+  input.addEventListener('input', run);
+  document.getElementById('sample')!.addEventListener('click', () => {
+    input.value = SAMPLE_JWT;
+    run();
+  });
+  document.getElementById('clear')!.addEventListener('click', () => {
+    input.value = '';
+    status.textContent = '';
+    status.className = 'tool__status';
+    clearOut();
+  });
+</script>
+
+<style>
+  .tool { display: grid; gap: var(--sp-3); }
+  .tool__bar { display: flex; gap: var(--sp-2); }
+  .tool__actions { display: flex; gap: var(--sp-2); }
+  .tool__actions button {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    color: var(--text-0);
+    font-size: var(--fs-sm);
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  .tool__actions button:hover { border-color: var(--accent); background: var(--bg-2); }
+  .tool__actions button.ghost { color: var(--text-2); }
+  .jwt__label {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    font-family: var(--font-mono);
+  }
+  .jwt__label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--sp-2);
+  }
+  .tool__textarea {
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-0);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    padding: var(--sp-4);
+    outline: none;
+  }
+  .tool__textarea:focus { border-color: var(--accent); }
+  .jwt__claims {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+  }
+  .jwt__claims span {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--text-1);
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-1);
+  }
+  .jwt__cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4);
+  }
+  .tool__output {
+    min-height: 12rem;
+    margin: 0;
+    padding: var(--sp-4);
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-0);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow: auto;
+  }
+  .tool__status { font-size: var(--fs-sm); font-family: var(--font-mono); min-height: 1.25rem; }
+  .tool__status--ok { color: var(--ok); }
+  .tool__status--err { color: var(--err); }
+  .jwt__label-row :global(.tool-copy) {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    color: var(--text-1);
+    font-size: var(--fs-xs);
+    padding: var(--sp-1) var(--sp-3);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  .jwt__label-row :global(.tool-copy:hover:not(:disabled)) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .jwt__label-row :global(.tool-copy:disabled) { opacity: 0.4; cursor: not-allowed; }
+
+  @media (max-width: 700px) {
+    .jwt__cols { grid-template-columns: 1fr; }
+  }
+</style>

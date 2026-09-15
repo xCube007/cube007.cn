@@ -76,6 +76,7 @@ const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n
 ---
 
 <BaseLayout title={title} description={description}>
+  <div class="read-progress" id="read-progress" hidden></div>
   <article class="note">
     <a href="/" class="note__back">← 回笔记流</a>
     {
@@ -91,6 +92,7 @@ const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n
       <time datetime={date.toISOString()}>{dateStr}</time>
       <span class="note__sep">·</span>
       <span>{minutes} 分钟阅读</span>
+      <button type="button" class="note__copy" id="copy-link">复制链接</button>
       {
         tags.length > 0 && (
           <ul class="note__tags">
@@ -177,9 +179,48 @@ const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n
 <script>
   import { enhanceCodeBlocks } from '../../components/notes/code-copy';
   enhanceCodeBlocks(document.querySelector('.note__body') ?? document);
+
+  const copyBtn = document.getElementById('copy-link');
+  copyBtn?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      copyBtn.textContent = '已复制 ✓';
+    } catch {
+      copyBtn.textContent = '复制失败';
+    }
+    window.setTimeout(() => {
+      copyBtn.textContent = '复制链接';
+    }, 1500);
+  });
+
+  const bar = document.getElementById('read-progress');
+  const article = document.querySelector('.note');
+  if (bar && article) {
+    bar.removeAttribute('hidden');
+    const onScroll = () => {
+      const total = article.scrollHeight - window.innerHeight;
+      const scrolled = total <= 0 ? 1 : Math.min(1, Math.max(0, window.scrollY / total));
+      bar.style.transform = `scaleX(${scrolled})`;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
 </script>
 
 <style>
+  .read-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    height: 2px;
+    background: var(--flow);
+    background-size: 200% auto;
+    transform: scaleX(0);
+    transform-origin: left center;
+    pointer-events: none;
+  }
   .note {
     max-width: var(--content-w);
     margin: 0 auto;
@@ -224,6 +265,20 @@ const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n
     border-bottom: 1px solid var(--border);
   }
   .note__sep { opacity: 0.5; }
+  .note__copy {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .note__copy:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
   .note__tags {
     list-style: none;
     display: flex;

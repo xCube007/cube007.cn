@@ -2,29 +2,41 @@
 import BaseLayout from '../../components/layout/BaseLayout.astro';
 import type { SearchItem } from '../../lib/search';
 import { getVisibleNotes } from '../../lib/notes';
+import { tools } from '../../lib/tools/registry';
 
 const notes = await getVisibleNotes();
 
-const index: SearchItem[] = notes.map((note) => ({
-  id: note.id,
-  title: note.data.title,
-  description: note.data.description ?? '',
-  tags: note.data.tags,
-  date: note.data.date.toISOString().slice(0, 10),
-  href: `/notes/${note.id}/`,
-}));
+const index: SearchItem[] = [
+  ...notes.map((note) => ({
+    id: note.id,
+    title: note.data.title,
+    description: note.data.description ?? '',
+    tags: note.data.tags,
+    date: note.data.date.toISOString().slice(0, 10),
+    href: `/notes/${note.id}/`,
+    kind: 'note' as const,
+  })),
+  ...tools.map((t) => ({
+    id: t.slug,
+    title: t.name,
+    description: t.desc,
+    tags: [t.short],
+    href: `/tools/${t.slug}/`,
+    kind: 'tool' as const,
+  })),
+];
 ---
 
-<BaseLayout title="搜索" description="搜索 Cube007 的学习笔记。">
+<BaseLayout title="搜索" description="搜索 Cube007 的学习笔记与开发小工具。">
   <section class="search-head">
-    <h1 class="search-title">搜索笔记</h1>
-    <p class="search-sub">按标题、摘要、标签过滤。纯前端,无服务端。</p>
+    <h1 class="search-title">搜索</h1>
+    <p class="search-sub">按标题、摘要、标签过滤笔记,也能搜到工具。纯前端,无服务端。</p>
     <label class="search-box">
       <span class="sr-only">搜索关键词</span>
       <input
         id="q"
         type="search"
-        placeholder="例如: Git / 索引 / embedding"
+        placeholder="例如: Git / JSON / 索引"
         autocomplete="off"
         spellcheck="false"
       />
@@ -38,7 +50,12 @@ const index: SearchItem[] = notes.map((note) => ({
 </BaseLayout>
 
 <script>
-  import { searchNotes, type SearchItem } from '../../lib/search';
+  import {
+    searchNotes,
+    highlightHtml,
+    escapeHtml,
+    type SearchItem,
+  } from '../../lib/search';
 
   const raw = document.getElementById('search-index')?.textContent ?? '[]';
   const index = JSON.parse(raw) as SearchItem[];
@@ -46,43 +63,48 @@ const index: SearchItem[] = notes.map((note) => ({
   const results = document.getElementById('results') as HTMLDivElement;
   const count = document.getElementById('count') as HTMLParagraphElement;
 
-  function escapeHtml(s: string): string {
-    return s
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;');
-  }
-
-  function render(items: SearchItem[]) {
+  function render(items: SearchItem[], query: string) {
     count.textContent =
       items.length === 0 ? '没有匹配结果' : `共 ${items.length} 条`;
 
     results.innerHTML = items
-      .map(
-        (item) => `
+      .map((item) => {
+        const kind = item.kind === 'tool' ? '工具' : '笔记';
+        return `
       <a class="result" href="${escapeHtml(item.href)}">
-        <div class="result__date">${escapeHtml(item.date)}</div>
-        <h2 class="result__title">${escapeHtml(item.title)}</h2>
+        <div class="result__meta">
+          <span class="result__kind">${kind}</span>
+          ${item.date ? `<span class="result__date">${escapeHtml(item.date)}</span>` : ''}
+        </div>
+        <h2 class="result__title">${highlightHtml(item.title, query)}</h2>
         ${
           item.description
-            ? `<p class="result__desc">${escapeHtml(item.description)}</p>`
+            ? `<p class="result__desc">${highlightHtml(item.description, query)}</p>`
             : ''
         }
         ${
           item.tags.length
             ? `<ul class="result__tags">${item.tags
-                .map((t) => `<li>#${escapeHtml(t)}</li>`)
+                .map((t) => `<li>#${highlightHtml(t, query)}</li>`)
                 .join('')}</ul>`
             : ''
         }
-      </a>`
-      )
+      </a>`;
+      })
       .join('');
   }
 
+  function syncUrl(q: string) {
+    const url = new URL(location.href);
+    if (q) url.searchParams.set('q', q);
+    else url.searchParams.delete('q');
+    history.replaceState(null, '', url);
+  }
+
   function run() {
-    render(searchNotes(index, input.value));
+    const q = input.value;
+    syncUrl(q.trim());
+    render(searchNotes(index, q), q);
   }
 
   input.addEventListener('input', run);
@@ -91,6 +113,7 @@ const index: SearchItem[] = notes.map((note) => ({
   const initial = params.get('q');
   if (initial) input.value = initial;
   run();
+  input.focus();
 </script>
 
 <style>
@@ -138,11 +161,24 @@ const index: SearchItem[] = notes.map((note) => ({
     transform: translateY(-1px);
     color: var(--text-0);
   }
+  .results :global(.result__meta) {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    margin-bottom: var(--sp-2);
+  }
+  .results :global(.result__kind) {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--accent);
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  }
   .results :global(.result__date) {
     color: var(--text-2);
     font-family: var(--font-mono);
     font-size: var(--fs-xs);
-    margin-bottom: var(--sp-2);
   }
   .results :global(.result__title) {
     font-size: var(--fs-lg);
@@ -163,17 +199,5 @@ const index: SearchItem[] = notes.map((note) => ({
     color: var(--accent);
     font-family: var(--font-mono);
     font-size: var(--fs-xs);
-  }
-
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
   }
 </style>

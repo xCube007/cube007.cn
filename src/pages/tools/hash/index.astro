@@ -1,0 +1,357 @@
+---
+import ToolLayout from '../../../components/layout/ToolLayout.astro';
+import { HASH_ALGOS, hashText, hmacText } from '../../../lib/tools/hash';
+void [HASH_ALGOS, hashText, hmacText];
+---
+
+<ToolLayout
+  slug="hash"
+  title="哈希 / HMAC"
+  description="SHA 系列摘要与 HMAC。文本和文件都在浏览器里算,不上传。SHA-1 只适合核对旧校验和。"
+  pageDescription="在线计算 SHA-1 / SHA-256 / SHA-384 / SHA-512 与 HMAC。"
+>
+  <div class="tool">
+    <div class="tool__bar">
+      <label class="tool__indent">
+        算法
+        <select id="algo">
+          {HASH_ALGOS.map((a) => (
+            <option value={a} selected={a === 'SHA-256'}>
+              {a}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label class="hash__check">
+        <input id="upper" type="checkbox" />
+        大写十六进制
+      </label>
+    </div>
+
+    <label class="hash__label" for="hash-input">文本</label>
+    <textarea
+      id="hash-input"
+      class="tool__textarea"
+      placeholder="输入要哈希的文本"
+      spellcheck="false"
+    ></textarea>
+
+    <label class="hash-file" for="hash-file">
+      <input id="hash-file" type="file" />
+      <span>或选择 / 拖入文件,在本地计算哈希</span>
+    </label>
+    <p id="file-meta" class="hash__file-meta"></p>
+
+    <div class="tool__bar">
+      <div class="tool__actions">
+        <button type="button" id="run">计算</button>
+        <button type="button" id="clear" class="ghost">清空</button>
+      </div>
+      <copy-button id="copy-btn"></copy-button>
+    </div>
+    <pre id="output" class="tool__output" aria-live="polite"></pre>
+    <p id="status" class="tool__status" role="status"></p>
+
+    <div class="hash__hmac">
+      <div class="hash__hmac-title">HMAC</div>
+      <label class="hash__label" for="hmac-key">密钥</label>
+      <input id="hmac-key" class="hash__key" type="text" placeholder="HMAC key" spellcheck="false" />
+      <div class="tool__bar">
+        <button type="button" id="hmac-run">计算 HMAC</button>
+        <copy-button id="hmac-copy"></copy-button>
+      </div>
+      <pre id="hmac-out" class="tool__output" aria-live="polite"></pre>
+      <p id="hmac-status" class="tool__status" role="status"></p>
+    </div>
+  </div>
+</ToolLayout>
+
+<script>
+  import '../../../components/tools/copy-button.ts';
+  import {
+    hashText,
+    hashBytes,
+    hmacText,
+    type HashAlgo,
+  } from '../../../lib/tools/hash';
+
+  const algoSel = document.getElementById('algo') as HTMLSelectElement;
+  const upperEl = document.getElementById('upper') as HTMLInputElement;
+  const input = document.getElementById('hash-input') as HTMLTextAreaElement;
+  const fileEl = document.getElementById('hash-file') as HTMLInputElement;
+  const fileMeta = document.getElementById('file-meta') as HTMLParagraphElement;
+  const output = document.getElementById('output') as HTMLPreElement;
+  const status = document.getElementById('status') as HTMLParagraphElement;
+  const copyBtn = document.getElementById('copy-btn') as any;
+  const hmacKey = document.getElementById('hmac-key') as HTMLInputElement;
+  const hmacOut = document.getElementById('hmac-out') as HTMLPreElement;
+  const hmacStatus = document.getElementById('hmac-status') as HTMLParagraphElement;
+  const hmacCopy = document.getElementById('hmac-copy') as any;
+
+  let fileBuffer: ArrayBuffer | null = null;
+  let fileName = '';
+
+  function algo(): HashAlgo {
+    return algoSel.value as HashAlgo;
+  }
+  function upper(): boolean {
+    return upperEl.checked;
+  }
+
+  function show(target: HTMLPreElement, statusEl: HTMLParagraphElement, copy: any, hex: string, msg: string) {
+    target.textContent = hex;
+    statusEl.textContent = msg;
+    statusEl.className = 'tool__status tool__status--ok';
+    copy.setValue(hex);
+  }
+  function showErr(target: HTMLPreElement, statusEl: HTMLParagraphElement, copy: any, msg: string) {
+    target.textContent = '';
+    statusEl.textContent = '✗ ' + msg;
+    statusEl.className = 'tool__status tool__status--err';
+    copy.setValue('');
+  }
+
+  async function runHash() {
+    if (fileBuffer) {
+      const r = await hashBytes(algo(), fileBuffer, upper());
+      r.ok
+        ? show(output, status, copyBtn, r.hex, `已计算 ${fileName}`)
+        : showErr(output, status, copyBtn, r.error);
+      return;
+    }
+    const r = await hashText(algo(), input.value, upper());
+    r.ok
+      ? show(output, status, copyBtn, r.hex, '已计算文本哈希')
+      : showErr(output, status, copyBtn, r.error);
+  }
+
+  async function runHmac() {
+    const r = await hmacText(algo(), hmacKey.value, input.value, upper());
+    r.ok
+      ? show(hmacOut, hmacStatus, hmacCopy, r.hex, '已计算 HMAC')
+      : showErr(hmacOut, hmacStatus, hmacCopy, r.error);
+  }
+
+  function rememberFile(file: File) {
+    fileName = file.name;
+    fileMeta.textContent = `正在读取 ${file.name}…`;
+    file
+      .arrayBuffer()
+      .then((buf) => {
+        fileBuffer = buf;
+        fileMeta.textContent = `${file.name} · ${(file.size / 1024).toFixed(1)} KB`;
+        return runHash();
+      })
+      .catch(() => {
+        fileBuffer = null;
+        fileMeta.textContent = '';
+        showErr(output, status, copyBtn, '读取文件失败');
+      });
+  }
+
+  document.getElementById('run')!.addEventListener('click', () => {
+    void runHash();
+  });
+  document.getElementById('hmac-run')!.addEventListener('click', () => {
+    void runHmac();
+  });
+  document.getElementById('clear')!.addEventListener('click', () => {
+    input.value = '';
+    fileEl.value = '';
+    fileBuffer = null;
+    fileName = '';
+    fileMeta.textContent = '';
+    output.textContent = '';
+    hmacOut.textContent = '';
+    status.textContent = '';
+    hmacStatus.textContent = '';
+    status.className = 'tool__status';
+    hmacStatus.className = 'tool__status';
+    copyBtn.setValue('');
+    hmacCopy.setValue('');
+  });
+
+  fileEl.addEventListener('change', () => {
+    const file = fileEl.files?.[0];
+    if (file) rememberFile(file);
+  });
+  input.addEventListener('input', () => {
+    if (!fileBuffer) return;
+    fileBuffer = null;
+    fileName = '';
+    fileEl.value = '';
+    fileMeta.textContent = '';
+  });
+
+  const drop = document.querySelector('.hash-file') as HTMLLabelElement;
+  drop.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    drop.classList.add('is-over');
+  });
+  drop.addEventListener('dragleave', () => drop.classList.remove('is-over'));
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault();
+    drop.classList.remove('is-over');
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    fileEl.files = e.dataTransfer.files;
+    rememberFile(file);
+  });
+</script>
+
+<style>
+  .tool { display: grid; gap: var(--sp-3); }
+  .tool__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+  }
+  .tool__actions { display: flex; gap: var(--sp-2); }
+  .tool__indent {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+  }
+  .hash__check {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    color: var(--text-1);
+    font-size: var(--fs-sm);
+    cursor: pointer;
+  }
+  .hash__check input { accent-color: var(--accent); }
+  .hash__label {
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    font-family: var(--font-mono);
+  }
+  .tool__textarea,
+  .hash__key,
+  .tool__indent select,
+  .tool__actions button,
+  .hash__hmac button {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text-0);
+    font-size: var(--fs-sm);
+    border-radius: var(--radius-sm);
+    outline: none;
+  }
+  .tool__textarea {
+    width: 100%;
+    min-height: 140px;
+    resize: vertical;
+    font-family: var(--font-mono);
+    padding: var(--sp-4);
+    border-radius: var(--radius);
+  }
+  .hash__key {
+    width: 100%;
+    font-family: var(--font-mono);
+    padding: var(--sp-2) var(--sp-3);
+  }
+  .tool__textarea:focus,
+  .hash__key:focus,
+  .tool__indent select:focus {
+    border-color: var(--accent);
+  }
+  .tool__indent select,
+  .tool__actions button,
+  .hash__hmac button {
+    background: var(--bg-1);
+    padding: var(--sp-2) var(--sp-4);
+    cursor: pointer;
+  }
+  .tool__actions button:hover,
+  .hash__hmac button:hover {
+    border-color: var(--accent);
+    background: var(--bg-2);
+  }
+  .tool__actions button.ghost { color: var(--text-2); }
+
+  .hash-file {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 4.5rem;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--bg-1);
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    cursor: pointer;
+  }
+  .hash-file.is-over {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .hash-file input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+  .hash__file-meta {
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    min-height: 1rem;
+  }
+
+  .tool__output {
+    min-height: 3rem;
+    margin: 0;
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--accent-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .tool__status { font-size: var(--fs-sm); font-family: var(--font-mono); min-height: 1.25rem; }
+  .tool__status--ok { color: var(--ok); }
+  .tool__status--err { color: var(--err); }
+
+  .hash__hmac {
+    margin-top: var(--sp-4);
+    padding-top: var(--sp-5);
+    border-top: 1px solid var(--border);
+    display: grid;
+    gap: var(--sp-3);
+  }
+  .hash__hmac-title {
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    color: var(--text-1);
+  }
+
+  .tool__bar :global(.tool-copy),
+  .hash__hmac :global(.tool-copy) {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    color: var(--text-1);
+    font-size: var(--fs-xs);
+    padding: var(--sp-1) var(--sp-3);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  .tool__bar :global(.tool-copy:hover:not(:disabled)),
+  .hash__hmac :global(.tool-copy:hover:not(:disabled)) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .tool__bar :global(.tool-copy:disabled),
+  .hash__hmac :global(.tool-copy:disabled) {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+</style>

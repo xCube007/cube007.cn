@@ -1,15 +1,15 @@
 ---
-import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import ToolLayout from '../../../components/layout/ToolLayout.astro';
 import { testRegex } from '../../../lib/tools/regex';
 void testRegex;
 ---
 
-<BaseLayout title="正则测试" description="在线正则表达式测试,支持 flags 与捕获组。">
-  <section class="tool-head">
-    <a href="/tools/" class="tool-back">← 所有工具</a>
-    <h1 class="tool-title">正则测试</h1>
-    <p class="tool-desc">输入 pattern 与文本,查看全部匹配与捕获组。纯浏览器运行。</p>
-  </section>
+<ToolLayout
+  slug="regex"
+  title="正则测试"
+  description="输入 pattern 与文本,查看全部匹配与捕获组。纯浏览器运行。"
+  pageDescription="在线正则表达式测试,支持 flags 与捕获组。"
+>
 
   <div class="tool">
     <div class="re__pattern">
@@ -30,7 +30,7 @@ void testRegex;
     <p id="status" class="tool__status" role="status"></p>
     <div id="results" class="re__results" aria-live="polite"></div>
   </div>
-</BaseLayout>
+</ToolLayout>
 
 <script>
   import { testRegex } from '../../../lib/tools/regex';
@@ -49,7 +49,13 @@ void testRegex;
       .replaceAll('"', '&quot;');
   }
 
-  function run() {
+  function run(fromLive = false) {
+    if (fromLive && patternEl.value === '') {
+      status.textContent = '';
+      status.className = 'tool__status';
+      results.innerHTML = '';
+      return;
+    }
     const r = testRegex(patternEl.value, flagsEl.value, textEl.value);
     if (!r.ok) {
       status.textContent = '✗ ' + r.error;
@@ -87,6 +93,15 @@ void testRegex;
     results.innerHTML = '';
   });
 
+  let timer = 0;
+  function schedule() {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => run(true), 160);
+  }
+  [patternEl, flagsEl, textEl].forEach((el) => {
+    el.addEventListener('input', schedule);
+  });
+
   // Enter 在 pattern/flags 上直接跑
   [patternEl, flagsEl].forEach((el) => {
     el.addEventListener('keydown', (e) => {
@@ -96,10 +111,6 @@ void testRegex;
 </script>
 
 <style>
-  .tool-head { margin-bottom: var(--sp-8); }
-  .tool-back { color: var(--text-2); font-size: var(--fs-sm); }
-  .tool-title { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); }
-  .tool-desc { color: var(--text-1); }
   .tool { display: grid; gap: var(--sp-3); }
 
   .re__pattern {

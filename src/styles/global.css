@@ -68,6 +68,57 @@ a:hover {
   color: var(--text-0);
 }
 
+mark {
+  background: var(--mark);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 0.15em;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-1);
+  color: var(--text-0);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn--primary {
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg-1));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--text-0);
+}
+.btn--primary:hover {
+  color: var(--accent-3);
+  border-color: var(--accent);
+}
+.btn--ghost {
+  background: transparent;
+  color: var(--text-1);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* 滚动条克制一点,不抢注意力 */
 * {
   scrollbar-width: thin;

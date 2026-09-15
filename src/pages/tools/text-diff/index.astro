@@ -1,15 +1,15 @@
 ---
-import BaseLayout from '../../../components/layout/BaseLayout.astro';
+import ToolLayout from '../../../components/layout/ToolLayout.astro';
 import { compareText } from '../../../lib/tools/text-diff';
 void compareText;
 ---
 
-<BaseLayout title="文本对比" description="并排对比两段文本或代码，行级对齐并标出字符级差异。">
-  <section class="tool-head">
-    <a href="/tools/" class="tool-back">← 所有工具</a>
-    <h1 class="tool-title">文本对比</h1>
-    <p class="tool-desc">左右粘贴文本或代码，实时标出差异。纯浏览器运行，数据不上传。</p>
-  </section>
+<ToolLayout
+  slug="text-diff"
+  title="文本对比"
+  description="左右粘贴文本或代码，实时标出差异。纯浏览器运行，数据不上传。"
+  pageDescription="并排对比两段文本或代码，行级对齐并标出字符级差异。"
+>
 
   <div class="tool">
     <div class="tool__bar">
@@ -68,7 +68,7 @@ void compareText;
       </div>
     </div>
   </div>
-</BaseLayout>
+</ToolLayout>
 
 <script>
   import {
@@ -280,21 +280,6 @@ void compareText;
   /* 本页需要更宽的对比区 */
   :global(body:has(.diff) .site-main) {
     max-width: min(1400px, 100%);
-  }
-
-  .tool-head {
-    margin-bottom: var(--sp-6);
-  }
-  .tool-back {
-    color: var(--text-2);
-    font-size: var(--fs-sm);
-  }
-  .tool-title {
-    font-size: var(--fs-2xl);
-    margin: var(--sp-4) 0 var(--sp-2);
-  }
-  .tool-desc {
-    color: var(--text-1);
   }
 
   .tool {
