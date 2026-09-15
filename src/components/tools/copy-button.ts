@@ -11,6 +11,7 @@ export class CopyButton extends HTMLElement {
     btn.addEventListener('click', () => this.copy());
     this.appendChild(btn);
     this.button = btn;
+    btn.disabled = !this.value;
   }
 
   private button!: HTMLButtonElement;
