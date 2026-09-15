@@ -54,7 +54,7 @@ src/
       text-diff/
   components/
     layout/         # 全站布局、Header、Footer
-    notes/          # 笔记列表卡片、标签云
+    notes/          # 笔记列表卡片、标签芯片
     tools/          # 工具卡片、共享 UI(输入框/复制按钮/结果区)
     ui/             # 流光装饰、按钮等通用件
   styles/
@@ -75,6 +75,7 @@ src/
 - **正文排版单点定义**:笔记正文样式只在 `prose.css` 定义,文章页与后台预览面板共用。
 - **工具清单单点定义**:工具的 slug/名称/描述只在 `src/lib/tools/registry.ts` 登记,工具页和首页都从它渲染,页面里不再手写工具列表。`registry.test.ts` 会扫 `src/pages/tools/` 的目录做交叉校验,漏登记直接测试失败。
 - **动效不空跑**:只在元素可见时才跑动画(比如流光描边挂在 `:hover` 上,不是常驻 `infinite`)。全站尊重 `prefers-reduced-motion`。
+- **标签芯片单点定义**:药丸高度/字号/圆角只在 `tokens.css` + `TagChip.astro` 定义,不按笔记数缩放字号。中英文混排也锁同一高度。
 
 ## 设计方向(暗色流光)
 

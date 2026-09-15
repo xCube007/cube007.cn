@@ -92,6 +92,13 @@
   --radius-sm: 6px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.25);
 
+  /* ---- 标签芯片:统一高度,不按笔记数缩放;中英文混排也对齐 ---- */
+  --tag-h: 2rem;
+  --tag-h-sm: 1.5rem;
+  --tag-px: 0.875rem;
+  --tag-px-sm: 0.55rem;
+  --tag-radius: 999px;
+
   /* ---- 版式 ---- */
   --content-w: 720px;
   --wide-w: 1080px;

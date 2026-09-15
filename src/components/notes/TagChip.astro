@@ -1,0 +1,76 @@
+---
+interface Props {
+  name: string;
+  href?: string;
+  count?: number;
+  size?: 'md' | 'sm';
+}
+
+const { name, href, count, size = 'md' } = Astro.props;
+const classes = ['tag-chip', size === 'sm' && 'tag-chip--sm'];
+const label = count != null ? `${name}, ${count} 篇` : undefined;
+---
+
+{
+  href ? (
+    <a class:list={classes} href={href} aria-label={label}>
+      <span class="tag-chip__name">#{name}</span>
+      {count != null && <span class="tag-chip__count">{count}</span>}
+    </a>
+  ) : (
+    <span class:list={classes}>
+      <span class="tag-chip__name">#{name}</span>
+      {count != null && <span class="tag-chip__count">{count}</span>}
+    </span>
+  )
+}
+
+<style>
+  /*
+    固定高度 + line-height:1,避免中文回退字体把行盒撑高,
+    和拉丁标签看起来像随机大小的药丸。
+  */
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    box-sizing: border-box;
+    height: var(--tag-h);
+    padding: 0 var(--tag-px);
+    border-radius: var(--tag-radius);
+    border: 1px solid var(--border);
+    background: var(--bg-1);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .tag-chip--sm {
+    height: var(--tag-h-sm);
+    padding: 0 var(--tag-px-sm);
+    font-size: var(--fs-xs);
+    gap: var(--sp-1);
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg-1));
+    border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+  }
+  a.tag-chip:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .tag-chip__name,
+  .tag-chip__count {
+    display: block;
+    line-height: 1;
+  }
+  .tag-chip__count {
+    color: var(--text-2);
+    font-size: 0.75em;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
