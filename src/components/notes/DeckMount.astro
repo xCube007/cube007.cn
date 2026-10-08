@@ -1,0 +1,14 @@
+---
+interface Props {
+  html: string;
+}
+
+const { html } = Astro.props;
+---
+
+<div class="deck-root" set:html={html} />
+
+<script>
+  import { initDeck } from './deck-runtime';
+  initDeck();
+</script>

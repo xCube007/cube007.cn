@@ -1,0 +1,1033 @@
+<style>
+  :root{
+    --bg:#0a0e1a; --panel:rgba(255,255,255,.045); --panel-border:rgba(255,255,255,.09);
+    --text:#e8ecf4; --muted:#8b93a7; --red:#ff4d4f; --orange:#ff9f43; --gold:#ffd166;
+    --grad:linear-gradient(135deg,#ff4d4f 0%,#ff9f43 100%);
+    --teal:#2dd4bf; --blue:#60a5fa; --purple:#a78bfa;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  /* page chrome is on html.is-deck from BaseLayout */
+  #stage{position:fixed;left:50%;top:50%;width:1280px;height:720px;transform:translate(-50%,-50%);transform-origin:center center;background:radial-gradient(ellipse at 20% 0%,#131b33 0%,var(--bg) 45%,#070b14 100%);overflow:hidden;}
+  #stage::before{content:"";position:absolute;inset:0;z-index:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse at center,black 30%,transparent 85%);}
+  .orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;z-index:0;animation:float 14s ease-in-out infinite alternate;}
+  .orb1{width:420px;height:420px;background:#ff4d4f33;left:-120px;top:-140px;}
+  .orb2{width:380px;height:380px;background:#ff9f4326;right:-100px;bottom:-160px;animation-delay:-5s;}
+  .orb3{width:260px;height:260px;background:#a78bfa1c;left:46%;top:60%;animation-delay:-9s;}
+  @keyframes float{from{transform:translate(0,0) scale(1);}to{transform:translate(60px,-40px) scale(1.12);}}
+
+  .slide{position:absolute;inset:0;padding:64px 84px;z-index:2;display:flex;flex-direction:column;justify-content:center;opacity:0;visibility:hidden;pointer-events:none;transform:translateX(90px) scale(.97);transition:opacity .55s ease,transform .65s cubic-bezier(.22,1,.36,1),visibility 0s .65s;}
+  .slide[data-state=active]{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition-delay:0s;}
+  .slide[data-state=exit-left]{opacity:0;visibility:visible;transform:translateX(-90px) scale(.97);}
+  .slide[data-state=exit-right]{opacity:0;visibility:visible;transform:translateX(90px) scale(.97);}
+  .slide[data-state=enter-left]{transform:translateX(-90px) scale(.97);}
+  .slide[data-state=enter-right]{transform:translateX(90px) scale(.97);}
+  .slide .fx{opacity:0;}
+  .slide.in .fx{animation:fadeUp .8s cubic-bezier(.22,1,.36,1) forwards;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(34px);}to{opacity:1;transform:none;}}
+  .slide.in .d1{animation-delay:.08s;} .slide.in .d2{animation-delay:.2s;}
+  .slide.in .d3{animation-delay:.32s;} .slide.in .d4{animation-delay:.44s;}
+  .slide.in .d5{animation-delay:.56s;} .slide.in .d6{animation-delay:.68s;}
+
+  .chrome-top{position:absolute;top:28px;left:84px;right:84px;display:flex;justify-content:space-between;align-items:center;z-index:10;font-size:13px;letter-spacing:.12em;color:var(--muted);}
+  .chrome-top .logo{display:flex;align-items:center;gap:10px;font-weight:600;}
+  .deck-back{color:var(--muted);text-decoration:none;letter-spacing:.08em;font-weight:600;margin-right:6px;}
+  .deck-back:hover{color:var(--orange);}
+  @media (prefers-reduced-motion: reduce) {
+    .orb,.slide,.slide.in .fx,.fill,.tl-line,.tl-dot,.typer .caret{animation:none!important;transition:none!important;}
+    .slide.in .fx,.slide .fx{opacity:1;transform:none;}
+    .tl-line{transform:none;}
+    .fill{width:var(--w);}
+  }
+  .logo-dot{width:10px;height:10px;border-radius:3px;background:var(--grad);box-shadow:0 0 14px #ff4d4f88;}
+  .chrome-top .tag{font-family:Consolas,monospace;color:#5b6478;}
+  .progress{position:absolute;top:0;left:0;height:3px;background:var(--grad);width:0;z-index:20;transition:width .5s cubic-bezier(.22,1,.36,1);box-shadow:0 0 12px #ff4d4faa;}
+  .dots{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;gap:7px;z-index:10;}
+  .dots span{width:16px;height:5px;border-radius:3px;background:rgba(255,255,255,.14);cursor:pointer;transition:.3s;}
+  .dots span:hover{background:rgba(255,255,255,.35);}
+  .dots span.on{background:var(--grad);width:28px;box-shadow:0 0 10px #ff4d4f77;}
+  .pagenum{position:absolute;bottom:26px;right:84px;z-index:10;font-family:Consolas,monospace;font-size:14px;color:var(--muted);}
+  .pagenum b{color:var(--orange);font-size:18px;}
+  .hint{position:absolute;bottom:26px;left:84px;z-index:10;font-size:12px;color:#4a5265;letter-spacing:.1em;animation:hintFade 1s 4s forwards;}
+  @keyframes hintFade{to{opacity:0;}}
+  .arrows{position:absolute;right:84px;top:50%;transform:translateY(-50%);z-index:10;display:flex;flex-direction:column;gap:8px;}
+  .arrows button{width:34px;height:34px;border-radius:10px;border:1px solid var(--panel-border);background:var(--panel);color:var(--muted);font-size:15px;cursor:pointer;transition:.25s;}
+  .arrows button:hover{border-color:#ff4d4f88;color:var(--orange);transform:scale(1.08);}
+  .ripple{position:fixed;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;pointer-events:none;z-index:99;background:radial-gradient(circle,rgba(255,140,100,.16) 0%,rgba(255,140,100,.07) 45%,transparent 70%);animation:rip .5s ease-out forwards;}
+  @keyframes rip{0%{opacity:0;transform:scale(.25);}30%{opacity:1;}100%{opacity:0;transform:scale(1);}}
+
+  #particles{position:absolute;inset:0;z-index:1;}
+  .badge{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:999px;border:1px solid #ff4d4f55;background:rgba(255,77,79,.08);color:#ff8a8b;font-size:14px;letter-spacing:.25em;width:fit-content;}
+  .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 10px var(--red);animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
+  .cover-title{font-size:100px;font-weight:800;line-height:1.02;margin:26px 0 8px;letter-spacing:-.02em;}
+  .cover-title .g{background:linear-gradient(120deg,#ff4d4f 10%,#ff9f43 50%,#ffd166 90%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .cover-sub{font-size:26px;color:#b8c0d4;font-weight:300;letter-spacing:.08em;}
+  .cover-sub b{color:var(--gold);font-weight:600;}
+  .typer{margin-top:30px;font-family:Consolas,"JetBrains Mono",monospace;font-size:17px;color:var(--teal);}
+  .typer .caret{display:inline-block;width:9px;height:19px;background:var(--teal);vertical-align:-3px;margin-left:3px;animation:blink 1s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  .cover-meta{position:absolute;bottom:78px;left:84px;display:flex;gap:34px;color:var(--muted);font-size:14px;}
+  .cover-meta span b{color:var(--text);font-weight:600;margin-left:8px;}
+
+  .sec-head{margin-bottom:30px;}
+  .sec-kicker{font-family:Consolas,monospace;color:var(--orange);font-size:15px;letter-spacing:.3em;margin-bottom:10px;}
+  .sec-title{font-size:44px;font-weight:800;letter-spacing:-.01em;}
+  .sec-title .hl{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+
+  .agenda-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .ag-card{background:var(--panel);border:1px solid var(--panel-border);border-radius:18px;padding:24px 24px 20px;transition:.3s;}
+  .ag-card:hover{transform:translateY(-6px);border-color:#ff4d4f77;box-shadow:0 18px 40px -14px rgba(255,77,79,.35);}
+  .ag-num{font-family:Consolas,monospace;font-size:40px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1;margin-bottom:12px;}
+  .ag-t{font-weight:700;font-size:18px;margin-bottom:6px;}
+  .ag-d{font-size:12.5px;color:var(--muted);line-height:1.65;min-height:42px;}
+  .ag-p{margin-top:12px;font-family:Consolas,monospace;font-size:11px;color:#5b6478;letter-spacing:.1em;}
+  .ag-p b{color:var(--teal);font-weight:600;}
+
+  .s2-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:44px;align-items:center;}
+  .s2-lead{font-size:18px;line-height:1.8;color:#c3cadb;}
+  .s2-lead b{color:var(--gold);}
+  .kv-visual{background:var(--panel);border:1px solid var(--panel-border);border-radius:20px;padding:26px;backdrop-filter:blur(8px);}
+  .kv-visual h4{font-family:Consolas,monospace;color:var(--muted);font-size:13px;letter-spacing:.15em;margin-bottom:16px;}
+  .kv-row{display:flex;gap:12px;margin-bottom:10px;align-items:center;font-family:Consolas,monospace;font-size:15px;}
+  .kv-k{padding:7px 14px;border-radius:8px;background:rgba(255,77,79,.13);border:1px solid #ff4d4f44;color:#ff8a8b;min-width:96px;text-align:center;}
+  .kv-arrow{color:#4a5265;}
+  .kv-v{padding:7px 14px;border-radius:8px;background:rgba(255,209,102,.1);border:1px solid #ffd16644;color:var(--gold);flex:1;}
+  .feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:30px;}
+  .feat{background:var(--panel);border:1px solid var(--panel-border);border-radius:14px;padding:14px 18px;transition:.3s;}
+  .feat:hover{border-color:#ff4d4f66;transform:translateY(-3px);box-shadow:0 12px 30px rgba(255,77,79,.12);}
+  .feat .fi{font-size:22px;margin-bottom:6px;}
+  .feat .ft{font-weight:700;font-size:15px;margin-bottom:3px;}
+  .feat .fd{font-size:12.5px;color:var(--muted);line-height:1.5;}
+
+  .tl-wrap{position:relative;margin-top:26px;padding:0 6px;}
+  .tl-line{position:absolute;left:6px;right:6px;top:96px;height:3px;border-radius:2px;background:linear-gradient(90deg,#ff4d4f,#ff9f43,#ffd166);transform:scaleX(0);transform-origin:left;box-shadow:0 0 16px rgba(255,120,70,.4);}
+  .slide.in .tl-line{animation:tlDraw 1.4s .25s cubic-bezier(.22,1,.36,1) forwards;}
+  @keyframes tlDraw{to{transform:scaleX(1);}}
+  .tl-items{display:flex;position:relative;}
+  .tl-item{flex:1;position:relative;padding-top:118px;}
+  .tl-year{position:absolute;top:0;left:0;right:0;text-align:center;font-family:Consolas,monospace;font-size:21px;font-weight:800;color:var(--text);}
+  .tl-item.major .tl-year{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:23px;}
+  .tl-dot{position:absolute;top:88px;left:50%;transform:translateX(-50%);width:17px;height:17px;border-radius:50%;background:#0a0e1a;border:3px solid var(--orange);box-shadow:0 0 12px rgba(255,159,67,.6);opacity:0;}
+  .tl-item.major .tl-dot{border-color:var(--red);box-shadow:0 0 16px rgba(255,77,79,.8);}
+  .slide.in .tl-dot{animation:dotPop .5s forwards;}
+  @keyframes dotPop{from{opacity:0;transform:translateX(-50%) scale(0);}to{opacity:1;transform:translateX(-50%) scale(1);}}
+  .tl-card{text-align:left;padding:0 8px;}
+  .tl-v{font-family:Consolas,monospace;color:var(--teal);font-size:12.5px;margin-bottom:3px;}
+  .tl-t{font-weight:700;font-size:13.5px;margin-bottom:5px;}
+  .tl-d{font-size:11px;color:var(--muted);line-height:1.55;}
+  .tl-note{margin-top:34px;display:flex;justify-content:center;}
+  .tl-note span{font-size:13px;color:var(--muted);background:var(--panel);border:1px solid var(--panel-border);border-radius:99px;padding:10px 26px;}
+  .tl-note b{color:var(--gold);}
+
+  .s3-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;}
+  .reason-card{background:var(--panel);border:1px solid var(--panel-border);border-radius:16px;padding:18px 22px;margin-bottom:14px;display:flex;gap:16px;align-items:flex-start;transition:.3s;}
+  .reason-card:hover{border-color:var(--orange);transform:translateX(6px);}
+  .rc-num{font-family:Consolas,monospace;font-size:30px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1;padding-top:3px;}
+  .rc-t{font-weight:700;font-size:17px;margin-bottom:5px;}
+  .rc-t .code{font-family:Consolas,monospace;font-size:13.5px;color:var(--teal);}
+  .rc-d{font-size:13.5px;color:var(--muted);line-height:1.6;}
+
+  .chart-box{background:var(--panel);border:1px solid var(--panel-border);border-radius:20px;padding:28px 30px;backdrop-filter:blur(8px);}
+  .chart-box h4{font-size:15px;color:#c3cadb;margin-bottom:6px;font-weight:600;}
+  .chart-box .sub{font-size:12px;color:#5b6478;margin-bottom:26px;font-family:Consolas,monospace;}
+  .chart{display:flex;flex-direction:column;gap:24px;}
+  .cbar{display:grid;grid-template-columns:92px 1fr 78px;gap:12px;align-items:center;font-size:14px;}
+  .cbar .cname{color:#b8c0d4;font-weight:600;text-align:right;}
+  .track{height:26px;border-radius:7px;background:rgba(255,255,255,.05);overflow:hidden;position:relative;}
+  .fill{height:100%;border-radius:7px;width:0;position:relative;}
+  .slide.in .fill{animation:grow 1.4s cubic-bezier(.22,1,.36,1) forwards;}
+  @keyframes grow{from{width:0;}to{width:var(--w);}}
+  .fill.redis{background:linear-gradient(90deg,#ff4d4f,#ff9f43);box-shadow:0 0 18px rgba(255,77,79,.5);}
+  .fill.mongo{background:#4f7c5a;}
+  .fill.mysql{background:#3d5a80;}
+  .cbar .qps{font-family:Consolas,monospace;color:var(--gold);font-weight:700;}
+  .chart-note{margin-top:24px;padding-top:18px;border-top:1px dashed rgba(255,255,255,.1);display:flex;justify-content:space-around;}
+  .stat{text-align:center;}
+  .stat .sv{font-size:26px;font-weight:800;font-family:Consolas,monospace;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .stat .sl{font-size:12px;color:var(--muted);margin-top:4px;}
+  .slide.in .fill.f1{animation-delay:.5s;}.slide.in .fill.f2{animation-delay:.72s;}.slide.in .fill.f3{animation-delay:.94s;}
+
+  .pipe{display:flex;align-items:center;gap:0;margin-bottom:26px;}
+  .pnode{background:rgba(10,14,26,.75);border:1px solid var(--panel-border);border-radius:14px;padding:16px 14px;text-align:center;flex:1;transition:.3s;min-width:0;}
+  .pnode:hover{border-color:var(--orange);transform:translateY(-4px);}
+  .pnode .pi{font-size:24px;margin-bottom:6px;}
+  .pnode .pt{font-weight:700;font-size:14.5px;margin-bottom:4px;}
+  .pnode .pd{font-size:11.5px;color:var(--muted);line-height:1.5;}
+  .pnode.hot{border-color:#ff4d4f77;background:rgba(255,77,79,.1);}
+  .pnode.hot .pt{color:#ff8a8b;}
+  .parrow{color:#5b6478;font-size:20px;padding:0 8px;flex-shrink:0;}
+  .tm-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .tm-card{background:var(--panel);border:1px solid var(--panel-border);border-radius:16px;padding:20px 24px;transition:.3s;}
+  .tm-card:hover{border-color:var(--teal);}
+  .tm-card h4{font-size:16.5px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+  .tm-badge{font-family:Consolas,monospace;font-size:11px;padding:2px 9px;border-radius:99px;font-weight:400;}
+  .tm-badge.b-red{color:#ff8a8b;background:rgba(255,77,79,.12);border:1px solid #ff4d4f44;}
+  .tm-badge.b-teal{color:var(--teal);background:rgba(45,212,191,.1);border:1px solid #2dd4bf44;}
+  .tm-card ul{list-style:none;}
+  .tm-card li{font-size:13px;color:#a6aec2;line-height:1.7;padding-left:20px;position:relative;margin-bottom:7px;}
+  .tm-card li::before{content:"▸";position:absolute;left:0;color:var(--orange);}
+  .tm-card li b{color:var(--text);}
+  .tm-card li .code{font-family:Consolas,monospace;font-size:12px;color:var(--teal);}
+  .bt-chips{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .bt-chip{font-family:Consolas,monospace;font-size:12px;color:#b8c0d4;background:rgba(0,0,0,.3);border:1px solid var(--panel-border);border-radius:8px;padding:7px 13px;}
+  .bt-chip b{color:var(--purple);}
+
+  .ds-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+  .ds-card{background:var(--panel);border:1px solid var(--panel-border);border-radius:16px;padding:20px 16px;transition:.35s;position:relative;overflow:hidden;}
+  .ds-card::after{content:"";position:absolute;inset:auto 0 0 0;height:3px;background:var(--c);opacity:.85;}
+  .ds-card:hover{transform:translateY(-8px) scale(1.02);border-color:var(--c);box-shadow:0 18px 40px -12px var(--c);}
+  .ds-icon{font-size:30px;margin-bottom:12px;display:block;}
+  .ds-name{font-family:Consolas,monospace;font-weight:800;font-size:19px;color:var(--c);margin-bottom:4px;}
+  .ds-desc{font-size:12.5px;color:#a6aec2;line-height:1.55;margin-bottom:12px;min-height:40px;}
+  .ds-cmd{font-family:Consolas,monospace;font-size:11.5px;color:var(--teal);background:rgba(0,0,0,.35);border-radius:6px;padding:6px 8px;margin-bottom:10px;}
+  .ds-use{font-size:11.5px;color:var(--muted);}
+  .ds-use b{color:var(--gold);font-weight:600;}
+  .c-red{--c:#ff6b6b;} .c-orange{--c:#ffa94d;} .c-gold{--c:#ffd43b;}
+  .c-teal{--c:#2dd4bf;} .c-blue{--c:#60a5fa;}
+
+  .enc-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:26px;align-items:start;}
+  .enc-table{width:100%;border-collapse:separate;border-spacing:0 7px;}
+  .enc-table th{font-family:Consolas,monospace;font-size:12px;color:#5b6478;letter-spacing:.12em;text-align:left;padding:0 14px 4px;font-weight:600;}
+  .enc-table td{background:var(--panel);padding:12px 14px;font-size:13.5px;border-top:1px solid var(--panel-border);border-bottom:1px solid var(--panel-border);color:#c3cadb;line-height:1.5;}
+  .enc-table tr td:first-child{border-left:1px solid var(--panel-border);border-radius:11px 0 0 11px;font-weight:700;color:var(--text);}
+  .enc-table tr td:last-child{border-right:1px solid var(--panel-border);border-radius:0 11px 11px 0;font-family:Consolas,monospace;font-size:12.5px;color:var(--muted);}
+  .enc-table tr:hover td{background:rgba(255,159,67,.06);border-color:#ff9f4355;}
+  .enc-table .mono{font-family:Consolas,monospace;font-size:12.5px;}
+  .enc-table .mono .sm{color:var(--teal);} .enc-table .mono .lg{color:var(--gold);}
+  .why-card{background:var(--panel);border:1px solid var(--panel-border);border-radius:16px;padding:18px 22px;margin-bottom:14px;transition:.3s;}
+  .why-card:hover{border-color:var(--blue);}
+  .why-card h4{font-size:15.5px;font-weight:700;margin-bottom:9px;}
+  .why-card h4 .code{font-family:Consolas,monospace;font-size:13px;color:var(--teal);}
+  .why-card p{font-size:12.8px;color:#a6aec2;line-height:1.7;}
+  .why-card p b{color:var(--gold);}
+
+  .ps-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:30px;align-items:start;}
+  .ps-diagram{background:var(--panel);border:1px solid var(--panel-border);border-radius:18px;padding:24px;backdrop-filter:blur(8px);}
+  .ps-diagram h4{font-family:Consolas,monospace;font-size:13px;color:var(--muted);letter-spacing:.15em;margin-bottom:18px;}
+  .ps-row{display:flex;align-items:center;gap:10px;margin-bottom:13px;font-size:13.5px;}
+  .ps-box{background:rgba(10,14,26,.75);border:1px solid var(--panel-border);border-radius:10px;padding:11px 15px;text-align:center;flex:1;font-weight:600;}
+  .ps-box small{display:block;font-weight:400;font-size:11px;color:var(--muted);margin-top:3px;}
+  .ps-box.red{border-color:#ff4d4f66;background:rgba(255,77,79,.1);color:#ff8a8b;}
+  .ps-box.teal{border-color:#2dd4bf55;color:var(--teal);}
+  .ps-box.gold{border-color:#ffd16655;color:var(--gold);}
+  .ps-arr{color:#5b6478;font-size:17px;flex-shrink:0;}
+  .ps-cmd{margin-top:16px;font-family:Consolas,monospace;font-size:12.5px;color:var(--teal);background:rgba(0,0,0,.35);border-radius:9px;padding:11px 14px;line-height:1.8;}
+  .ps-cmd .cm{color:#ff8a8b;}
+  .pl{list-style:none;margin-top:14px;}
+  .pl li{font-size:13px;color:#a6aec2;line-height:1.65;margin-bottom:9px;padding-left:26px;position:relative;}
+  .pl li.good::before{content:"✓";position:absolute;left:2px;color:var(--teal);font-weight:700;}
+  .pl li.bad::before{content:"✗";position:absolute;left:2px;color:#ff6b6b;font-weight:700;}
+  .pl li b{color:var(--text);}
+  .ps-card{background:var(--panel);border:1px solid var(--panel-border);border-radius:16px;padding:20px 24px;transition:.3s;}
+  .ps-card:hover{border-color:var(--gold);}
+  .ps-card h3{font-size:17px;font-weight:700;margin-bottom:4px;}
+  .hybrid-bar{margin-top:14px;background:rgba(0,0,0,.3);border:1px solid var(--panel-border);border-radius:12px;overflow:hidden;display:flex;height:52px;}
+  .hybrid-bar div{display:flex;align-items:center;justify-content:center;font-family:Consolas,monospace;font-size:12.5px;font-weight:600;}
+  .hybrid-bar .h1{flex:3;background:rgba(255,77,79,.2);color:#ff8a8b;border-right:1px dashed #ff4d4f55;}
+  .hybrid-bar .h2{flex:2;background:rgba(45,212,191,.13);color:var(--teal);}
+
+  .ex-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;}
+  .ex-card{background:var(--panel);border:1px solid var(--panel-border);border-radius:18px;padding:24px 28px;transition:.3s;}
+  .ex-card:hover{border-color:var(--orange);transform:translateY(-4px);}
+  .ex-card .ei{font-size:26px;margin-bottom:10px;}
+  .ex-card h3{font-size:19px;font-weight:700;margin-bottom:9px;}
+  .ex-card h3 .code{font-family:Consolas,monospace;font-size:13px;color:var(--teal);font-weight:400;}
+  .ex-card p{font-size:13.2px;color:#a6aec2;line-height:1.75;}
+  .ex-card p b{color:var(--gold);}
+  .ex-card .ex-flow{margin-top:13px;font-family:Consolas,monospace;font-size:12px;color:var(--teal);background:rgba(0,0,0,.32);border-radius:9px;padding:10px 13px;line-height:1.8;}
+  .ex-note{display:flex;gap:12px;align-items:center;background:linear-gradient(135deg,rgba(255,159,67,.09),rgba(255,209,102,.04));border:1px solid #ff9f4333;border-radius:14px;padding:14px 22px;font-size:13px;color:#c3cadb;}
+  .ex-note b{color:var(--orange);}
+  .ex-note .code{font-family:Consolas,monospace;color:var(--teal);}
+
+  .ev-warn{display:flex;align-items:center;gap:14px;background:rgba(255,77,79,.09);border:1px solid #ff4d4f44;border-radius:14px;padding:13px 20px;margin-bottom:20px;font-size:13.5px;color:#d8dee9;}
+  .ev-warn .wi{font-size:20px;}
+  .ev-warn b{color:#ff8a8b;}
+  .ev-warn .code{font-family:Consolas,monospace;color:var(--teal);font-size:12.5px;}
+  .ev-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+  .ev-chip{background:var(--panel);border:1px solid var(--panel-border);border-radius:12px;padding:14px;transition:.3s;}
+  .ev-chip:hover{transform:translateY(-4px);}
+  .ev-chip .en{font-family:Consolas,monospace;font-size:13px;font-weight:700;margin-bottom:5px;}
+  .ev-chip .ed{font-size:11.5px;color:var(--muted);line-height:1.5;}
+  .ev-chip.rec{border-color:var(--teal);background:rgba(45,212,191,.07);}
+  .ev-chip.rec .en{color:var(--teal);}
+  .ev-g-red .en{color:#ff8a8b;} .ev-g-gold .en{color:var(--gold);}
+  .ev-g-teal .en{color:var(--teal);} .ev-g-purple .en{color:var(--purple);}
+  .ev-cmd{font-family:Consolas,monospace;font-size:13px;color:var(--teal);background:rgba(0,0,0,.35);border-radius:10px;padding:12px 18px;}
+  .ev-cmd .cm{color:#ff8a8b;}
+  .rec-tag{display:inline-block;font-size:10.5px;color:#0a0e1a;background:var(--teal);border-radius:99px;padding:1px 8px;font-weight:700;margin-left:6px;vertical-align:1px;}
+
+  .repl-diagram{background:var(--panel);border:1px solid var(--panel-border);border-radius:18px;padding:26px 30px;margin-bottom:18px;backdrop-filter:blur(8px);}
+  .rd-row{display:flex;align-items:center;justify-content:center;gap:22px;}
+  .rd-node{border-radius:14px;padding:16px 26px;text-align:center;background:rgba(10,14,26,.75);border:1px solid var(--panel-border);}
+  .rd-node .rn{font-weight:800;font-size:15.5px;margin-bottom:3px;}
+  .rd-node .rs{font-family:Consolas,monospace;font-size:11px;color:var(--muted);}
+  .rd-node.master{border-color:#ff4d4f77;background:rgba(255,77,79,.1);box-shadow:0 0 26px rgba(255,77,79,.18);}
+  .rd-node.master .rn{color:#ff8a8b;}
+  .rd-node.replica{border-color:#2dd4bf55;}
+  .rd-node.replica .rn{color:var(--teal);}
+  .rd-link{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:170px;}
+  .rd-link .la{font-size:11.5px;color:var(--muted);font-family:Consolas,monospace;}
+  .rd-link .ln{width:100%;height:2px;background:linear-gradient(90deg,transparent,#ff9f43,transparent);position:relative;overflow:hidden;}
+  .rd-link .ln::after{content:"";position:absolute;top:0;left:-30%;width:30%;height:100%;background:linear-gradient(90deg,transparent,#ffd166);animation:flow 1.8s linear infinite;}
+  @keyframes flow{to{left:100%;}}
+  .repl-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .repl-card{background:var(--panel);border:1px solid var(--panel-border);border-radius:14px;padding:17px 22px;transition:.3s;}
+  .repl-card:hover{border-color:var(--orange);}
+  .repl-card h4{font-size:15.5px;font-weight:700;margin-bottom:8px;}
+  .repl-card h4 .code{font-family:Consolas,monospace;font-size:12.5px;color:var(--teal);font-weight:400;}
+  .repl-card p{font-size:12.8px;color:#a6aec2;line-height:1.7;}
+  .repl-card p b{color:var(--gold);}
+
+  .sen-wrap{display:grid;grid-template-columns:1fr 1.25fr;gap:26px;align-items:stretch;}
+  .sen-diagram{background:var(--panel);border:1px solid var(--panel-border);border-radius:18px;padding:24px;}
+  .sen-row{display:flex;justify-content:center;gap:16px;margin-bottom:8px;}
+  .sen-node{border-radius:12px;padding:11px 20px;text-align:center;background:rgba(10,14,26,.75);border:1px solid var(--panel-border);font-weight:700;font-size:14px;}
+  .sen-node small{display:block;font-family:Consolas,monospace;font-size:10.5px;color:var(--muted);font-weight:400;margin-top:2px;}
+  .sen-node.snt{border-color:#a78bfa55;color:var(--purple);}
+  .sen-node.m{border-color:#ff4d4f77;background:rgba(255,77,79,.1);color:#ff8a8b;box-shadow:0 0 22px rgba(255,77,79,.15);}
+  .sen-node.r{border-color:#2dd4bf55;color:var(--teal);}
+  .sen-conn{display:flex;justify-content:center;gap:16px;color:#3d4a5c;font-size:16px;margin:2px 0;}
+  .sen-q{text-align:center;font-family:Consolas,monospace;font-size:11.5px;color:var(--muted);margin-top:12px;}
+  .proc-bar{display:flex;gap:0;align-items:stretch;}
+  .pstep{flex:1;background:var(--panel);border:1px solid var(--panel-border);border-radius:13px;padding:15px 14px;transition:.3s;min-width:0;}
+  .pstep:hover{border-color:var(--orange);transform:translateY(-4px);}
+  .pstep .pn{font-family:Consolas,monospace;font-size:11px;color:var(--orange);letter-spacing:.15em;margin-bottom:6px;}
+  .pstep .pt{font-weight:700;font-size:13.5px;margin-bottom:5px;}
+  .pstep .pd{font-size:11.5px;color:var(--muted);line-height:1.55;}
+  .pstep-arr{display:flex;align-items:center;color:#5b6478;font-size:16px;padding:0 7px;flex-shrink:0;}
+  .sen-title{font-size:14.5px;font-weight:600;margin-bottom:14px;color:#c3cadb;}
+
+  .cl-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:34px;align-items:center;}
+  .ring-wrap{display:flex;flex-direction:column;align-items:center;gap:18px;}
+  .ring{width:225px;height:225px;border-radius:50%;position:relative;background:conic-gradient(#ff4d4f 0 33.3%,#ff9f43 33.3% 66.6%,#ffd166 66.6% 100%);-webkit-mask:radial-gradient(circle,transparent 57%,black 58%);mask:radial-gradient(circle,transparent 57%,black 58%);}
+  .ring::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:1px dashed rgba(255,159,67,.25);animation:spin 26s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .ring-center{text-align:center;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
+  .ring-center .rv{font-family:Consolas,monospace;font-size:29px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .ring-center .rl{font-size:11.5px;color:var(--muted);letter-spacing:.15em;margin-top:2px;}
+  .ring-legend{display:flex;gap:14px;font-family:Consolas,monospace;font-size:11.5px;color:var(--muted);}
+  .ring-legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;}
+  .cl-cards{display:flex;flex-direction:column;gap:13px;}
+  .cl-card{background:var(--panel);border:1px solid var(--panel-border);border-radius:14px;padding:16px 22px;display:flex;gap:14px;align-items:flex-start;transition:.3s;}
+  .cl-card:hover{border-color:var(--gold);transform:translateX(6px);}
+  .cl-card .ci{font-size:19px;padding-top:1px;}
+  .cl-card .ct{font-weight:700;font-size:15px;margin-bottom:4px;}
+  .cl-card .ct .code{font-family:Consolas,monospace;font-size:12.5px;color:var(--teal);font-weight:400;}
+  .cl-card .cd{font-size:12.5px;color:var(--muted);line-height:1.65;}
+  .cl-card .cd b{color:var(--gold);}
+
+  .pit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .pit{background:var(--panel);border:1px solid var(--panel-border);border-radius:18px;padding:24px;position:relative;overflow:hidden;transition:.3s;}
+  .pit::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--c);}
+  .pit:hover{transform:translateY(-7px);border-color:var(--c);box-shadow:0 20px 44px -14px var(--c);}
+  .pit .pi{font-size:25px;margin-bottom:10px;}
+  .pit h3{font-size:18.5px;font-weight:800;color:var(--c);margin-bottom:9px;}
+  .pit .sym{font-size:12px;color:#ff8a8b;background:rgba(255,77,79,.08);border:1px solid #ff4d4f33;border-radius:9px;padding:9px 12px;line-height:1.6;margin-bottom:13px;}
+  .pit .df-t{font-size:12px;color:var(--muted);letter-spacing:.15em;margin-bottom:8px;}
+  .pit .df{display:flex;flex-direction:column;gap:7px;}
+  .pit .df span{font-size:12.3px;color:#c3cadb;background:rgba(0,0,0,.28);border:1px solid var(--panel-border);border-radius:8px;padding:8px 12px;line-height:1.55;}
+  .pit .df b{color:var(--c);}
+  .p-red{--c:#ff6b6b;} .p-orange{--c:#ffa94d;} .p-blue{--c:#74a8ff;}
+
+  .flow{background:linear-gradient(135deg,rgba(255,77,79,.08),rgba(255,159,67,.05));border:1px solid #ff4d4f33;border-radius:18px;padding:22px 26px;margin-bottom:20px;}
+  .flow h4{font-size:17px;font-weight:700;margin-bottom:15px;display:flex;align-items:center;gap:10px;}
+  .flow h4 .tagc{font-size:11px;font-family:Consolas,monospace;color:var(--teal);background:rgba(45,212,191,.12);padding:2px 9px;border-radius:99px;font-weight:400;}
+  .flow-steps{display:flex;align-items:center;gap:0;}
+  .fstep{background:rgba(10,14,26,.7);border:1px solid var(--panel-border);border-radius:10px;padding:11px 14px;text-align:center;font-size:12.5px;line-height:1.5;min-width:100px;transition:.3s;}
+  .fstep b{display:block;font-size:13.5px;}
+  .fstep.hot{border-color:#ff4d4f77;background:rgba(255,77,79,.12);}
+  .fstep.hot b{color:#ff8a8b;}
+  .fstep.fast{border-color:#2dd4bf66;}
+  .fstep.fast b{color:var(--teal);}
+  .farrow{color:#5b6478;font-size:17px;padding:0 9px;flex-shrink:0;}
+  .flow .note{margin-top:13px;font-size:12.5px;color:var(--muted);}
+  .flow .note code{font-family:Consolas,monospace;color:var(--teal);background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px;}
+  .scene-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .scene{background:var(--panel);border:1px solid var(--panel-border);border-radius:14px;padding:16px 19px;transition:.3s;}
+  .scene:hover{transform:translateY(-4px);border-color:var(--teal);box-shadow:0 14px 34px rgba(45,212,191,.1);}
+  .scene .si{font-size:21px;margin-bottom:8px;}
+  .scene .st{font-weight:700;font-size:15px;margin-bottom:6px;}
+  .scene .sd{font-size:12.3px;color:var(--muted);line-height:1.6;}
+  .scene .sd code{font-family:Consolas,monospace;color:var(--gold);background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px;font-size:11.3px;}
+
+  .bp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+  .bp{display:flex;gap:14px;background:var(--panel);border:1px solid var(--panel-border);border-radius:14px;padding:17px 20px;align-items:flex-start;transition:.3s;}
+  .bp:hover{border-color:var(--gold);transform:translateY(-3px);}
+  .bp-ic{font-size:20px;line-height:1.4;}
+  .bp-t{font-weight:700;font-size:15px;margin-bottom:4px;}
+  .bp-t code{font-family:Consolas,monospace;font-size:12.5px;color:var(--teal);}
+  .bp-d{font-size:12.6px;color:var(--muted);line-height:1.65;}
+  .bp-d b{color:var(--gold);}
+
+  .qa-wrap{display:flex;align-items:center;justify-content:space-between;gap:40px;}
+  .qa2{font-size:110px;font-weight:800;letter-spacing:.02em;background:linear-gradient(120deg,#ff4d4f 10%,#ff9f43 55%,#ffd166 95%);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.05;}
+  .qa2-sub{font-size:17px;color:var(--muted);margin-top:10px;}
+  .cheat{background:var(--panel);border:1px solid var(--panel-border);border-radius:20px;padding:26px 30px;max-width:520px;}
+  .cheat h4{font-size:15px;font-weight:700;margin-bottom:6px;}
+  .cheat .ch-sub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+  .cheat-chips{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:18px;}
+  .cheat-chips span{font-family:Consolas,monospace;font-size:13.5px;padding:8px 16px;border-radius:9px;background:rgba(0,0,0,.35);border:1px solid var(--panel-border);color:var(--teal);transition:.25s;}
+  .cheat-chips span:hover{border-color:var(--teal);color:var(--gold);transform:translateY(-2px);}
+  .cheat .mem-line{font-family:Consolas,monospace;font-size:12.5px;color:#5b6478;border-top:1px dashed rgba(255,255,255,.1);padding-top:14px;}
+  .cheat .mem-line b{color:var(--orange);}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+  <div class="progress" id="progress"></div>
+
+  <div class="chrome-top">
+    <div class="logo"><a class="deck-back" href="/">← 笔记流</a><span class="logo-dot"></span>REDIS 技术分享</div>
+    <div class="tag">// in-memory data store</div>
+  </div>
+
+  <!-- 1 封面 -->
+  <section class="slide" data-state="active" data-n="0">
+    <canvas id="particles"></canvas>
+    <div style="position:relative;z-index:3;">
+      <div class="badge fx">TECH SHARING · 后端技术系列</div>
+      <h1 class="cover-title fx d1"><span class="g">Redis</span><br>深度解析</h1>
+      <p class="cover-sub fx d2">从原理到生产实战，为什么它是后端工程师的 <b>必修课</b></p>
+      <p class="typer fx d3"><span id="typeText"></span><span class="caret"></span></p>
+    </div>
+    <div class="cover-meta fx d4">
+      <span>主题<b>Redis 核心原理与实战</b></span>
+      <span>时长<b>~45 min</b></span>
+      <span>规模<b>20 页 · 6 大模块</b></span>
+    </div>
+  </section>
+
+  <!-- 2 目录 -->
+  <section class="slide" data-n="1">
+    <div class="sec-head fx">
+      <div class="sec-kicker">CONTENTS</div>
+      <h2 class="sec-title">今天聊 <span class="hl">六件事</span></h2>
+    </div>
+    <div class="agenda-grid">
+      <div class="ag-card fx d1"><div class="ag-num">01</div><div class="ag-t">初识 Redis</div><div class="ag-d">它是什么、凭什么流行、16 年发展脉络</div><div class="ag-p">P.<b>03–04</b></div></div>
+      <div class="ag-card fx d2"><div class="ag-num">02</div><div class="ag-t">高性能原理</div><div class="ag-d">10 万 QPS 背后的三大支柱与线程模型</div><div class="ag-p">P.<b>05–07</b></div></div>
+      <div class="ag-card fx d3"><div class="ag-num">03</div><div class="ag-t">数据结构</div><div class="ag-d">五大类型与各自的底层编码实现</div><div class="ag-p">P.<b>08–09</b></div></div>
+      <div class="ag-card fx d4"><div class="ag-num">04</div><div class="ag-t">持久化与内存</div><div class="ag-d">RDB / AOF / 过期删除 / 内存淘汰策略</div><div class="ag-p">P.<b>10–13</b></div></div>
+      <div class="ag-card fx d5"><div class="ag-num">05</div><div class="ag-t">高可用架构</div><div class="ag-d">主从复制 → 哨兵 → Cluster 演进路线</div><div class="ag-p">P.<b>14–16</b></div></div>
+      <div class="ag-card fx d6"><div class="ag-num">06</div><div class="ag-t">实战与避坑</div><div class="ag-d">缓存三大问题、经典场景、生产铁律</div><div class="ag-p">P.<b>17–20</b></div></div>
+    </div>
+  </section>
+
+  <!-- 3 是什么 -->
+  <section class="slide" data-n="2">
+    <div class="sec-head fx">
+      <div class="sec-kicker">01 / OVERVIEW</div>
+      <h2 class="sec-title">Redis 是 <span class="hl">什么</span></h2>
+    </div>
+    <div class="s2-grid">
+      <div>
+        <p class="s2-lead fx d1">
+          <b>RE</b>mote <b>D</b>ictionary <b>S</b>erver —— 一个开源的<b>内存键值数据库</b>，
+          由 C 语言编写，2009 年由 Salvatore Sanfilippo 创建，如今是缓存事实标准。
+          数据存在内存里，读写不碰磁盘，所以它是<b>为速度而生</b>的。
+        </p>
+        <div class="feat-grid">
+          <div class="feat fx d2"><div class="fi">💾</div><div class="ft">可持久化</div><div class="fd">RDB 快照 + AOF 日志，重启不丢数据</div></div>
+          <div class="feat fx d3"><div class="fi">🏗️</div><div class="ft">高可用</div><div class="fd">主从复制 · 哨兵自动故障转移 · Cluster 分片</div></div>
+          <div class="feat fx d4"><div class="fi">🧩</div><div class="ft">丰富数据结构</div><div class="fd">不止 String，还有 Hash / List / Set / ZSet</div></div>
+          <div class="feat fx d5"><div class="fi">🌍</div><div class="ft">生态无敌</div><div class="fd">几乎所有语言都有官方客户端</div></div>
+        </div>
+      </div>
+      <div class="kv-visual fx d2">
+        <h4>// key-value store</h4>
+        <div class="kv-row"><span class="kv-k">user:1001</span><span class="kv-arrow">→</span><span class="kv-v">"zhang"</span></div>
+        <div class="kv-row"><span class="kv-k">counter:pv</span><span class="kv-arrow">→</span><span class="kv-v">102400</span></div>
+        <div class="kv-row"><span class="kv-k">session:abc</span><span class="kv-arrow">→</span><span class="kv-v">{...}</span></div>
+        <div class="kv-row"><span class="kv-k">rank:today</span><span class="kv-arrow">→</span><span class="kv-v">[a,b,c...]</span></div>
+        <div class="kv-row"><span class="kv-k">online</span><span class="kv-arrow">→</span><span class="kv-v">{u1,u2,u3}</span></div>
+        <p style="margin-top:16px;font-size:12.5px;color:var(--muted);line-height:1.7;">
+          一个 <span style="color:var(--teal);font-family:Consolas,monospace;">GET key</span> 就是全部 ——
+          没有表、没有 Join、没有 SQL 解析，<b style="color:var(--gold);">这就是快的起点</b>。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 发展历程 -->
+  <section class="slide" data-n="3">
+    <div class="sec-head fx">
+      <div class="sec-kicker">01 / MILESTONES</div>
+      <h2 class="sec-title">16 年，<span class="hl">六次关键跃迁</span></h2>
+    </div>
+    <div class="tl-wrap fx d1">
+      <div class="tl-line"></div>
+      <div class="tl-items">
+        <div class="tl-item major"><div class="tl-year">2009</div><div class="tl-dot"></div><div class="tl-card"><div class="tl-v">v1.0</div><div class="tl-t">项目诞生</div><div class="tl-d">antirez 为解决实时统计负载，用 C 写出第一版</div></div></div>
+        <div class="tl-item"><div class="tl-year">2012</div><div class="tl-dot"></div><div class="tl-card"><div class="tl-v">v2.6</div><div class="tl-t">Lua 脚本</div><div class="tl-d">服务端原子执行复杂逻辑</div></div></div>
+        <div class="tl-item"><div class="tl-year">2013</div><div class="tl-dot"></div><div class="tl-card"><div class="tl-v">v2.8</div><div class="tl-t">哨兵 Sentinel</div><div class="tl-d">自动故障转移，高可用开箱即用</div></div></div>
+        <div class="tl-item major"><div class="tl-year">2015</div><div class="tl-dot"></div><div class="tl-card"><div class="tl-v">v3.0</div><div class="tl-t">官方集群</div><div class="tl-d">Redis Cluster 分布式方案发布</div></div></div>
+        <div class="tl-item"><div class="tl-year">2017</div><div class="tl-dot"></div><div class="tl-card"><div class="tl-v">v4.0</div><div class="tl-t">模块生态</div><div class="tl-d">Module 系统 + LFU + 混合持久化</div></div></div>
+        <div class="tl-item major"><div class="tl-year">2020</div><div class="tl-dot"></div><div class="tl-card"><div class="tl-v">v6.0</div><div class="tl-t">多线程 IO</div><div class="tl-d">网络读写并行化 + ACL + 客户端缓存</div></div></div>
+        <div class="tl-item"><div class="tl-year">2022</div><div class="tl-dot"></div><div class="tl-card"><div class="tl-v">v7.0</div><div class="tl-t">Functions</div><div class="tl-d">服务端函数 + 分片 PubSub</div></div></div>
+        <div class="tl-item major"><div class="tl-year">2025</div><div class="tl-dot"></div><div class="tl-card"><div class="tl-v">v8.0</div><div class="tl-t">回归开源</div><div class="tl-d">改用 AGPL 协议，内置向量检索</div></div></div>
+      </div>
+    </div>
+    <div class="tl-note fx d5"><span>从个人项目到 <b>最流行的 NoSQL</b> 之一：每次大版本都在回答"生产环境还缺什么"</span></div>
+  </section>
+
+  <!-- 5 为什么快 -->
+  <section class="slide" data-n="4">
+    <div class="sec-head fx">
+      <div class="sec-kicker">02 / PERFORMANCE</div>
+      <h2 class="sec-title">凭什么做到 <span class="hl">10 万+ QPS</span></h2>
+    </div>
+    <div class="s3-grid">
+      <div>
+        <div class="reason-card fx d1">
+          <div class="rc-num">01</div>
+          <div><div class="rc-t">纯内存操作</div><div class="rc-d">数据全在内存，读写在纳秒~微秒级完成，彻底绕开磁盘 I/O 这个最大瓶颈</div></div>
+        </div>
+        <div class="reason-card fx d2">
+          <div class="rc-num">02</div>
+          <div><div class="rc-t">单线程 + <span class="code">epoll</span> IO 多路复用</div><div class="rc-d">命令执行无锁、无上下文切换；单线程也能扛住几十万连接，因为瓶颈在网络不在 CPU</div></div>
+        </div>
+        <div class="reason-card fx d3">
+          <div class="rc-num">03</div>
+          <div><div class="rc-t">为速度而生的高级数据结构</div><div class="rc-d">SDS 字符串 O(1) 取长度、跳表实现 ZSet、listpack 紧凑存储，全是最优解</div></div>
+        </div>
+      </div>
+      <div class="chart-box fx d2">
+        <h4>单机吞吐对比（简单读写）</h4>
+        <div class="sub">// rough benchmark, single instance</div>
+        <div class="chart">
+          <div class="cbar"><span class="cname">Redis</span><div class="track"><div class="fill redis f1" style="--w:100%"></div></div><span class="qps" data-count="100000">0</span></div>
+          <div class="cbar"><span class="cname">MongoDB</span><div class="track"><div class="fill mongo f2" style="--w:22%"></div></div><span class="qps" data-count="22000">0</span></div>
+          <div class="cbar"><span class="cname">MySQL</span><div class="track"><div class="fill mysql f3" style="--w:6%"></div></div><span class="qps" data-count="6000">0</span></div>
+        </div>
+        <div class="chart-note">
+          <div class="stat"><div class="sv" data-count="1" data-suffix="ms内">0</div><div class="sl">P99 延迟</div></div>
+          <div class="stat"><div class="sv" data-count="30" data-suffix="万+">0</div><div class="sl">单实例 QPS 上限</div></div>
+          <div class="stat"><div class="sv" data-count="20" data-suffix="倍+">0</div><div class="sl">vs 传统 DB 吞吐</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 线程模型 -->
+  <section class="slide" data-n="5">
+    <div class="sec-head fx">
+      <div class="sec-kicker">02 / THREAD MODEL</div>
+      <h2 class="sec-title">单线程，<span class="hl">为什么反而是优点</span></h2>
+    </div>
+    <div class="pipe fx d1">
+      <div class="pnode"><div class="pi">👥</div><div class="pt">N 个客户端</div><div class="pd">几十万并发连接</div></div>
+      <div class="parrow">→</div>
+      <div class="pnode hot"><div class="pi">🌀</div><div class="pt">epoll 事件循环</div><div class="pd">IO 多路复用<br>一个线程监听全部 socket</div></div>
+      <div class="parrow">→</div>
+      <div class="pnode hot"><div class="pi">⚙️</div><div class="pt">命令执行</div><div class="pd">单线程串行<br>无锁 · 无切换 · 天然原子</div></div>
+      <div class="parrow">→</div>
+      <div class="pnode"><div class="pi">📤</div><div class="pt">写回响应</div><div class="pd">事件驱动回写</div></div>
+    </div>
+    <div class="tm-cols">
+      <div class="tm-card fx d2">
+        <h4>为什么不用多线程执行命令 <span class="tm-badge b-red">经典面试题</span></h4>
+        <ul>
+          <li>瓶颈在<b>内存和网络</b>，不在 CPU —— 多线程收益小</li>
+          <li>无锁 → <b>没有死锁和竞争</b>，实现极简，Bug 极少</li>
+          <li>单线程 → 所有命令<b>天然原子</b>，INCR 不需要加锁</li>
+          <li>避免了线程上下文切换的<b>微秒级开销</b></li>
+        </ul>
+      </div>
+      <div class="tm-card fx d3">
+        <h4>6.0 之后的多线程 <span class="tm-badge b-teal">IO threads</span></h4>
+        <ul>
+          <li>只并行化 <span class="code">read()/write()</span> 网络读写，<b>命令执行仍是单线程</b></li>
+          <li>网络成为瓶颈时可提升约 <b>1 倍</b> 吞吐，默认关闭</li>
+          <li>另有后台线程做脏活：<b>异步删除大 Key</b>、关闭文件、AOF 刷盘</li>
+        </ul>
+        <div class="bt-chips">
+          <span class="bt-chip"><b>bio</b>-close</span>
+          <span class="bt-chip"><b>aof</b>-fsync</span>
+          <span class="bt-chip"><b>lazy</b>-free</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 五大数据结构 -->
+  <section class="slide" data-n="6">
+    <div class="sec-head fx">
+      <div class="sec-kicker">03 / DATA STRUCTURES</div>
+      <h2 class="sec-title">五大数据结构，<span class="hl">各司其职</span></h2>
+    </div>
+    <div class="ds-grid">
+      <div class="ds-card c-red fx d1">
+        <span class="ds-icon">🔤</span>
+        <div class="ds-name">String</div>
+        <div class="ds-desc">最基础类型，可存字符串、整数、二进制，支持原子自增</div>
+        <div class="ds-cmd">SET / GET / INCR</div>
+        <div class="ds-use">场景：<b>缓存 · 计数器 · 分布式锁</b></div>
+      </div>
+      <div class="ds-card c-orange fx d2">
+        <span class="ds-icon">🗂️</span>
+        <div class="ds-name">Hash</div>
+        <div class="ds-desc">field-value 映射表，适合存对象，可单独改某个字段</div>
+        <div class="ds-cmd">HSET / HGET / HGETALL</div>
+        <div class="ds-use">场景：<b>用户信息 · 购物车</b></div>
+      </div>
+      <div class="ds-card c-gold fx d3">
+        <span class="ds-icon">📜</span>
+        <div class="ds-name">List</div>
+        <div class="ds-desc">双向链表，两端 O(1) 进出，天然是队列/栈</div>
+        <div class="ds-cmd">LPUSH / RPOP / LRANGE</div>
+        <div class="ds-use">场景：<b>消息队列 · 最新动态</b></div>
+      </div>
+      <div class="ds-card c-teal fx d4">
+        <span class="ds-icon">🎯</span>
+        <div class="ds-name">Set</div>
+        <div class="ds-desc">无序去重集合，支持交并差运算</div>
+        <div class="ds-cmd">SADD / SINTER / SCARD</div>
+        <div class="ds-use">场景：<b>标签 · 共同关注 · 抽奖</b></div>
+      </div>
+      <div class="ds-card c-blue fx d5">
+        <span class="ds-icon">🏆</span>
+        <div class="ds-name">ZSet</div>
+        <div class="ds-desc">带 score 的有序集合，跳表实现，按分数范围查超快</div>
+        <div class="ds-cmd">ZADD / ZREVRANGE</div>
+        <div class="ds-use">场景：<b>排行榜 · 延迟队列</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 底层编码 -->
+  <section class="slide" data-n="7">
+    <div class="sec-head fx">
+      <div class="sec-kicker">03 / UNDER THE HOOD</div>
+      <h2 class="sec-title">同一类型，<span class="hl">两副面孔</span></h2>
+    </div>
+    <div class="enc-grid">
+      <div class="fx d1">
+        <table class="enc-table">
+          <tr><th>类型</th><th>元素少 / 小</th><th>元素多 / 大</th><th style="text-align:left;">切换阈值（默认）</th></tr>
+          <tr><td>String</td><td class="mono"><span class="sm">int / embstr</span></td><td class="mono"><span class="lg">raw</span></td><td>44 字节</td></tr>
+          <tr><td>Hash</td><td class="mono"><span class="sm">listpack</span></td><td class="mono"><span class="lg">hashtable</span></td><td>128 项 或 64 字节</td></tr>
+          <tr><td>List</td><td colspan="2" style="text-align:center;">quicklist（listpack 节点组成的双向链表）</td><td>按节点大小压缩</td></tr>
+          <tr><td>Set</td><td class="mono"><span class="sm">intset / listpack</span></td><td class="mono"><span class="lg">hashtable</span></td><td>128 项</td></tr>
+          <tr><td>ZSet</td><td class="mono"><span class="sm">listpack</span></td><td class="mono"><span class="lg">skiplist + dict</span></td><td>128 项 或 64 字节</td></tr>
+        </table>
+        <p style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.7;">
+          小数据用紧凑结构：<b style="color:var(--gold);">省内存、缓存友好</b>；超过阈值自动升级为查询更快的结构 —— 两头的好处都占了。
+        </p>
+      </div>
+      <div>
+        <div class="why-card fx d2">
+          <h4><span class="code">SDS</span> 简单动态字符串</h4>
+          <p>头部直接记长度：<b>O(1)</b> 取长度（C 字符串要遍历）；二进制安全；<b>空间预分配</b> + 惰性释放，追加不抖。</p>
+        </div>
+        <div class="why-card fx d3">
+          <h4><span class="code">skiplist</span> 为什么不用红黑树</h4>
+          <p><b>范围查询</b>（ZRANGE）顺着底层链表走即可，红黑树要中序回溯；实现简单无旋转、<b>内存可调</b>（节点层数概率化）。</p>
+        </div>
+        <div class="why-card fx d4">
+          <h4><span class="code">skiplist + dict</span> 双结构</h4>
+          <p>ZSet 大数据时同时挂跳表和字典：<b>按成员查分 O(1)</b>，<b>按排名/范围查 O(logN)</b>，用内存换双倍速度。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 RDB -->
+  <section class="slide" data-n="8">
+    <div class="sec-head fx">
+      <div class="sec-kicker">04 / PERSISTENCE · RDB</div>
+      <h2 class="sec-title">RDB：<span class="hl">拍快照</span></h2>
+    </div>
+    <div class="ps-grid">
+      <div class="ps-diagram fx d1">
+        <h4>// bgsave fork flow</h4>
+        <div class="ps-row">
+          <div class="ps-box red">主进程<small>继续接收命令</small></div>
+          <div class="ps-arr">─fork()─▶</div>
+          <div class="ps-box teal">子进程<small>遍历全量数据写 RDB</small></div>
+        </div>
+        <div class="ps-row">
+          <div class="ps-box" style="flex:0 0 auto;">写时复制 COW</div>
+          <div class="ps-arr">·</div>
+          <div class="ps-box" style="flex:1;text-align:left;">fork 瞬间共享内存页，子进程读到的永远是<b style="color:var(--gold);">fork 那一刻的数据</b>，主进程后续写入复制到新页，互不干扰</div>
+        </div>
+        <div class="ps-cmd"><span class="cm">SAVE</span>    # 主进程执行，阻塞一切<br><span class="cm">BGSAVE</span>  # 后台执行（生产唯一正确姿势）<br><span class="cm">save 900 1</span> # 900秒内至少1次修改则自动触发</div>
+      </div>
+      <div>
+        <div class="ps-card fx d2">
+          <h3>✓ 快照的优点</h3>
+          <ul class="pl">
+            <li class="good"><b>恢复极快</b>：二进制紧凑格式，直接载入内存</li>
+            <li class="good"><b>文件小</b>：适合定时备份 / 灾备传输</li>
+            <li class="good">对日常性能<b>几乎零影响</b>（子进程干活）</li>
+          </ul>
+        </div>
+        <div class="ps-card fx d3" style="margin-top:14px;">
+          <h3>✗ 快照的代价</h3>
+          <ul class="pl">
+            <li class="bad"><b>丢数据窗口大</b>：两次快照之间的写入，宕机即丢</li>
+            <li class="bad">fork 瞬间<b>内存翻倍风险</b>（大实例 + 写入密集时）</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 AOF -->
+  <section class="slide" data-n="9">
+    <div class="sec-head fx">
+      <div class="sec-kicker">04 / PERSISTENCE · AOF</div>
+      <h2 class="sec-title">AOF：<span class="hl">记日记</span></h2>
+    </div>
+    <div class="ps-grid">
+      <div>
+        <div class="ps-diagram fx d1" style="margin-bottom:14px;">
+          <h4>// append command to log</h4>
+          <div class="ps-row">
+            <div class="ps-box red">写命令<small>SET k v</small></div>
+            <div class="ps-arr">→</div>
+            <div class="ps-box gold">aof_buf<small>协议格式追加</small></div>
+            <div class="ps-arr">→</div>
+            <div class="ps-box teal">fsync 落盘<small>按策略执行</small></div>
+          </div>
+        </div>
+        <div class="tm-cols" style="grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div class="tm-card fx d2" style="padding:16px 14px;">
+            <h4 style="font-size:13.5px;"><span class="tm-badge b-red">always</span></h4>
+            <p style="font-size:12px;color:var(--muted);line-height:1.65;">每条命令都刷盘<br><b style="color:#ff8a8b;">一条不丢</b>，但最慢</p>
+          </div>
+          <div class="tm-card fx d3" style="padding:16px 14px;border-color:#2dd4bf55;">
+            <h4 style="font-size:13.5px;"><span class="tm-badge b-teal">everysec</span></h4>
+            <p style="font-size:12px;color:var(--muted);line-height:1.65;">后台线程每秒一次<br><b style="color:var(--teal);">默认推荐</b>：最多丢 1 秒，性能几乎无损</p>
+          </div>
+          <div class="tm-card fx d4" style="padding:16px 14px;">
+            <h4 style="font-size:13.5px;"><span class="tm-badge b-red" style="color:#a78bfa;background:rgba(167,139,250,.1);border-color:#a78bfa44;">no</span></h4>
+            <p style="font-size:12px;color:var(--muted);line-height:1.65;">交给操作系统，30 秒一次<br>最快，但<b style="color:#a78bfa;">丢多少听天由命</b></p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="ps-card fx d3">
+          <h3>🔄 AOF 重写 <span style="font-family:Consolas,monospace;font-size:12px;color:var(--teal);">bgrewriteaof</span></h3>
+          <p style="font-size:12.8px;color:#a6aec2;line-height:1.7;margin-top:6px;">日志越记越长？fork 子进程按<b style="color:var(--gold);">当前数据状态</b>生成等价最小命令集，替换旧日志 —— 100 万次 INCR 重写成 1 条 SET。</p>
+        </div>
+        <div class="ps-card fx d4" style="margin-top:14px;">
+          <h3>🧬 混合持久化（4.0+，推荐）</h3>
+          <div class="hybrid-bar">
+            <div class="h1">RDB 全量快照</div>
+            <div class="h2">AOF 增量命令</div>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.7;margin-top:10px;">重写时把 RDB 塞进 AOF 头部：<b style="color:var(--gold);">恢复速度接近 RDB，丢失窗口只有 AOF 间隔</b> —— 两全其美。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 过期删除 -->
+  <section class="slide" data-n="10">
+    <div class="sec-head fx">
+      <div class="sec-kicker">05 / MEMORY · EXPIRE</div>
+      <h2 class="sec-title">过期 Key，<span class="hl">怎么删</span></h2>
+    </div>
+    <div class="ex-grid">
+      <div class="ex-card fx d1">
+        <div class="ei">🛋️</div>
+        <h3>惰性删除 <span class="code">lazy</span></h3>
+        <p>平时不管。访问某个 key 时<b>顺手检查</b>：过期就删掉并返回 nil。CPU 零浪费，但没人访问的过期 key 会<b>赖在内存里</b>。</p>
+        <div class="ex-flow">GET k → 过期? → 是: DEL + return nil<br>              ↓否<br>          正常返回 value</div>
+      </div>
+      <div class="ex-card fx d2">
+        <div class="ei">🧹</div>
+        <h3>定期删除 <span class="code">periodic</span></h3>
+        <p>默认每 <b>100ms</b>（hz=10）从带 TTL 的 key 中<b>随机抽 20 个</b>检查，删掉过期的；若过期占比<b>超过 25%</b>，立刻再抽一轮 —— 自适应节奏。</p>
+        <div class="ex-flow">每100ms: 抽样20个 → 删过期<br>过期率 > 25% ? 重复 : 结束本轮</div>
+      </div>
+    </div>
+    <div class="ex-note fx d3">
+      <span style="font-size:18px;">🤝</span>
+      <span>两者<b>配合使用</b>：惰性删保证正确性，定期删兜底内存占用。<b>但若内存仍然涨满 maxmemory</b> —— 就轮到下一页的<b>淘汰策略</b>出手了。</span>
+    </div>
+  </section>
+
+  <!-- 12 内存淘汰 -->
+  <section class="slide" data-n="11">
+    <div class="sec-head fx">
+      <div class="sec-kicker">05 / MEMORY · EVICTION</div>
+      <h2 class="sec-title">内存满了，<span class="hl">赶谁走</span></h2>
+    </div>
+    <div class="fx d1">
+      <div class="ev-warn"><span class="wi">⚠️</span><span>默认策略 <b>noeviction</b>：内存打满 <span class="code">maxmemory</span> 后，<b>所有写命令直接报 OOM 错误</b> —— 生产缓存场景几乎必须改掉它。</span></div>
+    </div>
+    <div class="ev-grid">
+      <div class="ev-chip ev-g-red fx d1"><div class="en">noeviction</div><div class="ed">不淘汰，写满报错（默认）</div></div>
+      <div class="ev-chip ev-g-gold fx d2"><div class="en">allkeys-lru</div><div class="ed">全体 key，按 LRU 淘汰</div></div>
+      <div class="ev-chip ev-g-gold fx d3"><div class="en">volatile-lru</div><div class="ed">只在设了 TTL 的 key 里 LRU</div></div>
+      <div class="ev-chip ev-g-purple fx d4"><div class="en">volatile-ttl</div><div class="ed">剩余寿命最短的先走</div></div>
+      <div class="ev-chip rec fx d3"><div class="en">allkeys-lfu<span class="rec-tag">缓存首选</span></div><div class="ed">全体 key，按访问频率淘汰（4.0+）</div></div>
+      <div class="ev-chip rec fx d4"><div class="en">volatile-lfu</div><div class="ed">有 TTL 的 key 里按频率淘汰</div></div>
+      <div class="ev-chip ev-g-teal fx d5"><div class="en">allkeys-random</div><div class="ed">全体随机</div></div>
+      <div class="ev-chip ev-g-teal fx d6"><div class="en">volatile-random</div><div class="ed">有 TTL 的随机</div></div>
+    </div>
+    <div class="ev-cmd fx d6"><span class="cm">CONFIG SET</span> maxmemory 4gb&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm">CONFIG SET</span> maxmemory-policy allkeys-lfu</div>
+    <p style="margin-top:12px;font-size:12.3px;color:var(--muted);">LRU 看最近访问时间（偶发批量扫描会误伤老 key），LFU 看访问频率更抗"一时热点"；volatile-* 系列适合 Redis 里混存"缓存 + 不能丢的业务数据"时圈定淘汰范围。</p>
+  </section>
+
+  <!-- 13 主从复制 -->
+  <section class="slide" data-n="12">
+    <div class="sec-head fx">
+      <div class="sec-kicker">06 / REPLICATION</div>
+      <h2 class="sec-title">主从复制：<span class="hl">高可用的地基</span></h2>
+    </div>
+    <div class="repl-diagram fx d1">
+      <div class="rd-row">
+        <div class="rd-node master"><div class="rn">★ Master</div><div class="rs">写 · 接收命令流</div></div>
+        <div class="rd-link">
+          <div class="la">全量 RDB + 命令流</div>
+          <div class="ln"></div>
+          <div class="la">异步 · 实时</div>
+        </div>
+        <div class="rd-node replica"><div class="rn">Replica 1</div><div class="rs">只读 · 实时同步</div></div>
+        <div class="rd-node replica"><div class="rn">Replica 2</div><div class="rs">只读 · 实时同步</div></div>
+      </div>
+    </div>
+    <div class="repl-cols">
+      <div class="repl-card fx d2">
+        <h4>全量复制 <span class="code">首次连接 / offset 丢失</span></h4>
+        <p>从库首次连接：主库 <b>bg 生成 RDB</b> 发给从库载入，期间新写命令存进<b>复制缓冲区</b>随后追赶。代价大 —— 生产要避免频繁全量。</p>
+      </div>
+      <div class="repl-card fx d3">
+        <h4>增量复制 <span class="code">repl_backlog + offset</span></h4>
+        <p>断线重连时带上自己的 <b>offset</b>：还在环形积压队列里 → 只补差量命令；被覆盖了 → 退化为全量。网络抖动场景的救命稻草。</p>
+      </div>
+    </div>
+    <p style="margin-top:16px;font-size:12.5px;color:var(--muted);">⚠️ 复制是<b style="color:var(--gold);">异步</b>的：主库不等从库确认就回 ACK 客户端 —— 主库刚写完就宕机，最后几条可能没同步到从库。极端场景可用 <span style="font-family:Consolas,monospace;color:var(--teal);">min-replicas-to-write</span> 强制"至少 N 个从库在线才允许写"。</p>
+  </section>
+
+  <!-- 14 哨兵 -->
+  <section class="slide" data-n="13">
+    <div class="sec-head fx">
+      <div class="sec-kicker">06 / SENTINEL</div>
+      <h2 class="sec-title">哨兵：<span class="hl">7×24 的运维管家</span></h2>
+    </div>
+    <div class="sen-wrap">
+      <div class="sen-diagram fx d1">
+        <div class="sen-title">集群拓扑（3 哨兵 × 1 主 2 从）</div>
+        <div class="sen-row">
+          <div class="sen-node snt">Sentinel-1</div>
+          <div class="sen-node snt">Sentinel-2</div>
+          <div class="sen-node snt">Sentinel-3</div>
+        </div>
+        <div class="sen-conn"><span>│&nbsp;监控&nbsp;│&nbsp;监控&nbsp;│</span></div>
+        <div class="sen-row">
+          <div class="sen-node m">★ Master</div>
+        </div>
+        <div class="sen-conn"><span>复制&nbsp;&nbsp;/&nbsp;&nbsp;复制</span></div>
+        <div class="sen-row">
+          <div class="sen-node r">Replica-1</div>
+          <div class="sen-node r">Replica-2</div>
+        </div>
+        <div class="sen-q">// quorum=2：少数服从多数，防止单个哨兵误判</div>
+      </div>
+      <div>
+        <div class="sen-title fx d2" style="margin-bottom:10px;">故障转移四步（全自动，分钟级完成）</div>
+        <div class="proc-bar">
+          <div class="pstep fx d2"><div class="pn">STEP 1</div><div class="pt">主观下线</div><div class="pd">单个哨兵 ping 主库超时，标记 sdown</div></div>
+          <div class="pstep-arr">→</div>
+          <div class="pstep fx d3"><div class="pn">STEP 2</div><div class="pt">客观下线</div><div class="pd">≥quorum 个哨兵都认为挂了 → odown，实锤</div></div>
+          <div class="pstep-arr">→</div>
+          <div class="pstep fx d4"><div class="pn">STEP 3</div><div class="pt">选举新主</div><div class="pd">按优先级 → 复制偏移量 → runid 挑最优从库</div></div>
+          <div class="pstep-arr">→</div>
+          <div class="pstep fx d5"><div class="pn">STEP 4</div><div class="pt">切换流量</div><div class="pd">其余从库改跟新主，客户端自动拿到新地址</div></div>
+        </div>
+        <p style="margin-top:16px;font-size:12.5px;color:var(--muted);line-height:1.7;">哨兵自己也选主（raft 风格选 lead sentinel 执行切换）；客户端连的是<b style="color:var(--gold);">哨兵集群</b>而非具体实例 —— 拿到的永远是当前主库地址，主库换了应用无感。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15 Cluster -->
+  <section class="slide" data-n="14">
+    <div class="sec-head fx">
+      <div class="sec-kicker">06 / CLUSTER</div>
+      <h2 class="sec-title">Cluster：<span class="hl">数据自己分家</span></h2>
+    </div>
+    <div class="cl-grid">
+      <div class="ring-wrap fx d1">
+        <div class="ring">
+          <div class="ring-center"><div class="rv">16384</div><div class="sl">HASH SLOTS</div></div>
+        </div>
+        <div class="ring-legend">
+          <span><i style="background:#ff4d4f;"></i>M1: 0–5460</span>
+          <span><i style="background:#ff9f43;"></i>M2: 5461–10922</span>
+          <span><i style="background:#ffd166;"></i>M3: 10923–16383</span>
+        </div>
+      </div>
+      <div class="cl-cards">
+        <div class="cl-card fx d2">
+          <div class="ci">🎲</div>
+          <div><div class="ct">哈希槽定位 <span class="code">CRC16(key) mod 16384</span></div>
+          <div class="cd">每个 key 落进唯一槽位，槽位分配到节点 —— <b>数据在哪台机器，算一下就知道</b>，不需要中心路由表。</div></div>
+        </div>
+        <div class="cl-card fx d3">
+          <div class="ci">↪️</div>
+          <div><div class="ct">智能客户端 + <span class="code">MOVED</span> 重定向</div>
+          <div class="cd">SDK 直连任意节点；key 不归它管就返回 MOVED 指路，客户端缓存槽位映射表，<b>后续直连目标节点</b>。</div></div>
+        </div>
+        <div class="cl-card fx d4">
+          <div class="ci">📡</div>
+          <div><div class="ct">Gossip 协议，<b>无中心</b></div>
+          <div class="cd">节点间 P2P 交换集群状态，去中心化存活检测 + 故障转移（半数以上主节点同意才判定下线，比哨兵更稳）。</div></div>
+        </div>
+        <div class="cl-card fx d5">
+          <div class="ci">🧱</div>
+          <div><div class="ct">水平扩容 = <b>迁移槽位</b></div>
+          <div class="cd">加节点不用全量重分：把一部分 slot 从老节点<b>在线迁移</b>过去即可，标准部署 <b>3 主 3 从</b>起步。</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 16 缓存三大问题 -->
+  <section class="slide" data-n="15">
+    <div class="sec-head fx">
+      <div class="sec-kicker">07 / PITFALLS</div>
+      <h2 class="sec-title">缓存三大问题，<span class="hl">年年面试年年挂</span></h2>
+    </div>
+    <div class="pit-grid">
+      <div class="pit p-red fx d1">
+        <div class="pi">🕳️</div>
+        <h3>缓存穿透</h3>
+        <div class="sym"><b>查根本不存在的数据</b>（如 id=-1 恶意扫描）：缓存永远 miss，每次都打到 DB，形同虚设。</div>
+        <div class="df-t">防御方案</div>
+        <div class="df">
+          <span><b>缓存空值</b>：miss 后也把空值存 60s</span>
+          <span><b>布隆过滤器</b>：前置一层，"不存在"直接拦</span>
+        </div>
+      </div>
+      <div class="pit p-orange fx d2">
+        <div class="pi">🔥</div>
+        <h3>缓存击穿</h3>
+        <div class="sym"><b>热点 key 恰好过期</b>那一瞬间，万级并发同时回源重建，DB 被打出一个尖刺。</div>
+        <div class="df-t">防御方案</div>
+        <div class="df">
+          <span><b>互斥锁</b>：只放一个请求重建，其余等待</span>
+          <span><b>逻辑过期</b>：物理不过期，值里带过期时间异步刷</span>
+        </div>
+      </div>
+      <div class="pit p-blue fx d3">
+        <div class="pi">🏔️</div>
+        <h3>缓存雪崩</h3>
+        <div class="sym"><b>大面积同时失效</b>（批量同 TTL 到期 / Redis 整体宕机），流量洪峰直接砸穿 DB。</div>
+        <div class="df-t">防御方案</div>
+        <div class="df">
+          <span><b>TTL 加随机偏移</b>：把失效时间打散开</span>
+          <span><b>多级缓存 + 熔断限流</b>：DB 前再垫一层保险</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17 应用场景 -->
+  <section class="slide" data-n="16">
+    <div class="sec-head fx">
+      <div class="sec-kicker">07 / IN PRODUCTION</div>
+      <h2 class="sec-title">经典落地：<span class="hl">缓存是怎么工作的</span></h2>
+    </div>
+    <div class="flow fx d1">
+      <h4>⚡ Cache-Aside 旁路缓存模式 <span class="tagc">最常用</span></h4>
+      <div class="flow-steps">
+        <div class="fstep"><b>请求</b>读数据</div>
+        <div class="farrow">→</div>
+        <div class="fstep fast"><b>查缓存</b>命中?</div>
+        <div class="farrow">→</div>
+        <div class="fstep fast"><b>⚡ 返回</b>~0.1ms</div>
+        <div class="farrow" style="color:#3d4a5c;">miss ↓</div>
+        <div class="fstep hot"><b>查 DB</b>~50ms</div>
+        <div class="farrow">→</div>
+        <div class="fstep"><b>回写缓存</b>+ TTL</div>
+      </div>
+      <div class="note">读：先缓存后 DB，miss 才落库并回写 · 写：先更新 DB，再 <code>DEL</code> 缓存，下次读自动回源</div>
+    </div>
+    <div class="scene-grid">
+      <div class="scene fx d2"><div class="si">🔒</div><div class="st">分布式锁</div><div class="sd"><code>SET lock v NX EX 10</code>，抢到才能执行，解决多节点互斥；Redisson 看门狗自动续期</div></div>
+      <div class="scene fx d3"><div class="si">🏆</div><div class="st">实时排行榜</div><div class="sd">ZSet 天生有序，<code>ZINCRBY</code> 加分，<code>ZREVRANGE 0 9</code> 直接取 Top10</div></div>
+      <div class="scene fx d4"><div class="si">🚦</div><div class="st">接口限流</div><div class="sd"><code>INCR + EXPIRE</code> 固定窗口，或 Lua 脚本实现滑动窗口，防刷防雪崩</div></div>
+    </div>
+  </section>
+
+  <!-- 18 最佳实践 -->
+  <section class="slide" data-n="17">
+    <div class="sec-head fx">
+      <div class="sec-kicker">07 / BEST PRACTICES</div>
+      <h2 class="sec-title">上生产前的 <span class="hl">四条铁律</span></h2>
+    </div>
+    <div class="bp-grid">
+      <div class="bp fx d1"><div class="bp-ic">📦</div><div><div class="bp-t">拒绝大 Key</div><div class="bp-d">单 value 控制在 <b>10KB</b> 内。大 Key 会阻塞单线程、拖垮整个实例；拆分或压缩后再存，删除用 <code>UNLINK</code> 异步删</div></div></div>
+      <div class="bp fx d2"><div class="bp-ic">🔥</div><div><div class="bp-t">警惕热 Key</div><div class="bp-d">单 key 打到机器网卡上限时：本地缓存兜底 + 多副本拆分读写，监控先行</div></div></div>
+      <div class="bp fx d3"><div class="bp-ic">⏰</div><div><div class="bp-t">过期时间必设</div><div class="bp-d">不加 TTL = 内存慢性泄漏。过期时间<b>加随机偏移</b>，防止缓存雪崩集中失效</div></div></div>
+      <div class="bp fx d4"><div class="bp-ic">🛡️</div><div><div class="bp-t">持久化要权衡</div><div class="bp-d">纯缓存场景 RDB 甚至全关；数据重要用 <b>混合持久化</b>（everysec），别无脑 always</div></div></div>
+    </div>
+    <p style="margin-top:22px;font-size:12.5px;color:var(--muted);text-align:center;">—— 这四条覆盖了生产 Redis 事故的 <b style="color:var(--gold);">80%</b> ——</p>
+  </section>
+
+  <!-- 19 速览 -->
+  <section class="slide" data-n="18">
+    <div class="sec-head fx">
+      <div class="sec-kicker">07 / CHEAT SHEET</div>
+      <h2 class="sec-title">一页带走：<span class="hl">核心速览</span></h2>
+    </div>
+    <div class="tm-cols" style="grid-template-columns:repeat(2,1fr);gap:14px;">
+      <div class="tm-card fx d1">
+        <h4>⚡ 性能</h4>
+        <ul>
+          <li>纯内存 + epoll 单线程 + 优化的结构 = <b>10 万+ QPS</b></li>
+          <li>6.0 多线程只加速 <b>网络 IO</b>，命令执行仍然单线程</li>
+        </ul>
+      </div>
+      <div class="tm-card fx d2">
+        <h4>💾 持久化</h4>
+        <ul>
+          <li><b>RDB</b> 快照恢复快 / <b>AOF</b> 日志丢得少</li>
+          <li>4.0+ <b>混合持久化</b> = RDB 头 + AOF 尾，推荐</li>
+        </ul>
+      </div>
+      <div class="tm-card fx d3">
+        <h4>🏗️ 高可用</h4>
+        <ul>
+          <li>主从（异步复制）→ <b>哨兵</b>（自动故障转移）</li>
+          <li><b>Cluster</b>：16384 槽分片 + gossip，水平扩容</li>
+        </ul>
+      </div>
+      <div class="tm-card fx d4">
+        <h4>🚨 避坑</h4>
+        <ul>
+          <li>穿透（不存在）· 击穿（热点过期）· 雪崩（同刻失效）</li>
+          <li>大 Key / 热 Key / 必设 TTL，淘汰用 <b>allkeys-lfu</b></li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:18px;font-size:12.5px;color:var(--muted);text-align:center;">记住这张表，Redis 面试的<b style="color:var(--gold);">主干问题</b>基本都在射程内。</p>
+  </section>
+
+  <!-- 20 结尾 -->
+  <section class="slide" data-n="19">
+    <div class="qa-wrap">
+      <div class="fx d1">
+        <div class="qa2">Q & A</div>
+        <div class="qa2-sub">谢谢观看 · 欢迎拍砖交流</div>
+      </div>
+      <div class="cheat fx d3">
+        <h4>🎹 彩蛋：五个命令走天下</h4>
+        <div class="ch-sub">// 掌握这些，日常 90% 的缓存需求就能开工</div>
+        <div class="cheat-chips">
+          <span>SET k v EX 60</span><span>GET k</span><span>DEL k</span><span>INCR k</span><span>EXPIRE k 60</span>
+        </div>
+        <div class="mem-line">redis.io · AGPL (8.0) · since 2009 · <b>keep it simple, keep it fast</b></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="dots" id="dots"></div>
+  <div class="pagenum" id="pagenum"></div>
+  <div class="hint">← → 方向键 / 空格 / 点击 翻页</div>
+</div>
+

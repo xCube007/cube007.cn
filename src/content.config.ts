@@ -11,6 +11,7 @@ const notes = defineCollection({
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
     description: z.string().optional(),
+    format: z.enum(['article', 'slides']).default('article'),
   }),
 });
 
