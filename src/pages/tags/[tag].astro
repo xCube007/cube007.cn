@@ -25,26 +25,25 @@ const { tag, notes } = Astro.props;
 ---
 
 <BaseLayout title={`#${tag}`} description={`标签「${tag}」下的所有笔记。`}>
-  <section class="head">
-    <a href="/tags/" class="back">← 所有标签</a>
-    <h1 class="title"><span class="flow-text">#{tag}</span></h1>
-    <p class="sub">{notes.length} 篇笔记</p>
+  <section class="page-head">
+    <a href="/tags/" class="back-link">← cd ~/tags</a>
+    <p class="eyebrow">Tag</p>
+    <h1 class="page-title title"><span class="flow-text">#{tag}</span></h1>
+    <p class="page-sub">{notes.length} 篇笔记</p>
   </section>
 
-  <div class="grid">
+  <div class="list">
     {notes.map((note) => <NoteCard note={note} />)}
   </div>
 </BaseLayout>
 
 <style>
-  .head { margin-bottom: var(--sp-8); }
-  .back { color: var(--text-2); font-size: var(--fs-sm); }
-  .title { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); font-family: var(--font-mono); }
-  .sub { color: var(--text-1); }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--sp-4);
+  .title { font-family: var(--font-mono); }
+  .list {
+    max-width: 52rem;
+    margin: 0 calc(-1 * var(--sp-5));
+  }
+  @media (max-width: 680px) {
+    .list { margin: 0 calc(-1 * var(--sp-4)); }
   }
 </style>

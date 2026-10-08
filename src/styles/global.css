@@ -1,7 +1,7 @@
 /* ============================================================================
-   cube007.cn 全局样式 —— 重置、基础排版、工具类。
-   设计 token(颜色/字号/间距)和流光动画在 tokens.css,写作后台共用那一份。
-   暗色主题 + 简约流光科技感。
+   cube007.cn 全局样式 —— 重置、基础排版、共享组件类。
+   设计 token(颜色/字号/间距)和动画在 tokens.css,写作后台共用那一份。
+   暗色赛博终端 + 霓虹流光。
    ========================================================================== */
 
 @import './tokens.css';
@@ -34,19 +34,20 @@ body {
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
-/* 网格底纹:固定在视口后面,向下淡出,避免整页像铺了张壁纸 */
+/* 网格底纹:固定在视口后面,向下淡出 */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: -2;
   pointer-events: none;
   background-image: var(--grid);
   background-size: var(--grid-size) var(--grid-size);
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 75%);
-  mask-image: linear-gradient(180deg, #000 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 80%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 80%);
 }
 
 a {
@@ -64,7 +65,7 @@ a:hover {
 }
 
 ::selection {
-  background: rgba(109, 139, 255, 0.28);
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
   color: var(--text-0);
 }
 
@@ -75,36 +76,32 @@ mark {
   padding: 0 0.15em;
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-4);
-  border-radius: var(--radius-sm);
+kbd {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  padding: 0.1rem 0.4rem;
   border: 1px solid var(--border-strong);
-  background: var(--bg-1);
-  color: var(--text-0);
-  font-size: var(--fs-sm);
-  font-weight: 500;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-}
-.btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.btn--primary {
-  background: color-mix(in srgb, var(--accent) 16%, var(--bg-1));
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-  color: var(--text-0);
-}
-.btn--primary:hover {
-  color: var(--accent-3);
-  border-color: var(--accent);
-}
-.btn--ghost {
-  background: transparent;
+  border-bottom-width: 2px;
+  border-radius: 5px;
   color: var(--text-1);
+  background: var(--bg-2);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+:where(h1, h2, h3, h4) {
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .sr-only {
@@ -119,25 +116,148 @@ mark {
   border: 0;
 }
 
-/* 滚动条克制一点,不抢注意力 */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
-}
+/* ============================================================================
+   按钮
+   ========================================================================== */
 
-code,
-pre {
-  font-family: var(--font-mono);
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  height: 2.75rem;
+  padding: 0 var(--sp-5);
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--bg-1) 70%, transparent);
+  color: var(--text-0);
   font-size: var(--fs-sm);
+  font-weight: 600;
+  transition: border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease,
+    transform 0.12s ease;
+}
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--text-0);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 30%, transparent);
+  transform: translateY(-1px);
+}
+.btn--primary {
+  border-color: transparent;
+  background: var(--flow);
+  background-size: 200% auto;
+  color: #05060a;
+  box-shadow: var(--neon-glow);
+}
+.btn--primary:hover {
+  color: #05060a;
+  border-color: transparent;
+  animation: flow-border 2.5s linear infinite;
+  box-shadow: 0 0 32px color-mix(in srgb, var(--accent) 50%, transparent),
+    0 0 80px color-mix(in srgb, var(--accent-3) 30%, transparent);
+}
+.btn--ghost {
+  background: transparent;
+  color: var(--text-1);
 }
 
-:where(h1, h2, h3, h4) {
-  line-height: 1.25;
-  font-weight: 650;
-  letter-spacing: -0.01em;
+/* ============================================================================
+   页头 / 区块标题 —— 各页面共用,别在页面里再抄一份
+   ========================================================================== */
+
+.page-head {
+  position: relative;
+  margin-bottom: var(--sp-10);
+}
+.back-link {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-5);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+}
+.back-link:hover {
+  color: var(--accent);
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+/* 前面一个会呼吸的指示灯 */
+.eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+.page-title {
+  font-size: clamp(2.25rem, 5vw, var(--fs-3xl));
+  letter-spacing: -0.035em;
+  margin-bottom: var(--sp-3);
+}
+.page-sub {
+  max-width: 42rem;
+  color: var(--text-1);
+  font-size: var(--fs-lg);
 }
 
-/* 流光文字工具类 */
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+/* 标题后面拖一条渐隐的光线,把区块分开 */
+.section-head::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border-strong), transparent);
+  order: 1;
+}
+.section-title {
+  margin: 0;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.section-title::before {
+  content: '// ';
+  color: var(--accent);
+}
+.section-link {
+  order: 2;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+.section-link:hover {
+  color: var(--accent);
+}
+
+/* ============================================================================
+   流光文字
+   ========================================================================== */
+
 .flow-text {
   background: var(--flow);
   background-size: 200% auto;
@@ -148,7 +268,87 @@ pre {
 }
 
 /* ============================================================================
-   降低动效偏好 —— 流光是点缀,不是内容,关掉不影响任何信息
+   霓虹卡片:hover 时旋转渐变描边 + 光标高光
+   用法:class="neon-card" data-spotlight;要 3D 倾斜再加 data-tilt。
+   动画只挂在 :hover 上,平时不空转。
+   ========================================================================== */
+
+.neon-card {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  padding: var(--sp-5);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--accent-2) 6%, transparent), transparent 50%),
+    color-mix(in srgb, var(--bg-1) 85%, transparent);
+  color: var(--text-0);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.3s ease;
+}
+.neon-card::before,
+.neon-card::after {
+  content: '';
+  position: absolute;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.neon-card::before {
+  inset: 0;
+  z-index: -1;
+  background: var(--spotlight);
+}
+.neon-card::after {
+  inset: -1px;
+  padding: 1px;
+  background: var(--flow-conic);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+.neon-card:hover {
+  color: var(--text-0);
+  border-color: transparent;
+  box-shadow: var(--shadow), 0 0 40px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.neon-card:hover::before,
+.neon-card:hover::after {
+  opacity: 1;
+}
+.neon-card:hover::after {
+  animation: spin-border 3s linear infinite;
+}
+
+/* 3D 倾斜:--rx/--ry 由 BaseLayout 脚本写入,没有脚本时就是平的 */
+[data-tilt] {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+}
+/* 悬停时倾斜要跟手,只留极短的过渡;离开时用上面 0.3s 的过渡慢慢回正 */
+[data-tilt]:hover {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))
+    translateZ(8px);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 60ms linear;
+}
+
+/* ============================================================================
+   滚动浮现:原生 scroll-driven animation,不支持的浏览器直接显示
+   ========================================================================== */
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+
+/* ============================================================================
+   降低动效偏好 —— 流光是装饰,不是内容,关掉不影响任何信息
    ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
@@ -161,5 +361,9 @@ pre {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  [data-tilt],
+  [data-tilt]:hover {
+    transform: none;
   }
 }

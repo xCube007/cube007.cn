@@ -7,7 +7,7 @@ interface Props {
 }
 
 const { note } = Astro.props;
-const { title, date, tags, description, draft } = note.data;
+const { title, date, tags, description, draft, format } = note.data;
 const body = typeof note.body === 'string' ? note.body : '';
 const minutes = estimateReadingMinutes([title, description ?? '', body].join('\n'));
 
@@ -15,136 +15,162 @@ const dateStr = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',
-}).format(date);
+})
+  .format(date)
+  .replaceAll('/', '.');
 ---
 
 <a
   href={`/notes/${note.id}/`}
-  class:list={['note-card', draft && 'note-card--draft']}
+  class:list={['note-row', 'reveal', draft && 'note-row--draft']}
   data-spotlight
 >
-  <div class="note-card__top">
-    <div class="note-card__date">
-      {dateStr}
-      <span class="note-card__sep">·</span>
-      {minutes} 分钟
-    </div>
-    {draft && <span class="note-card__draft">草稿</span>}
+  <div class="note-row__meta">
+    <time datetime={date.toISOString()}>{dateStr}</time>
+    <span>{format === 'slides' ? 'SLIDES' : `${minutes} MIN`}</span>
   </div>
-  <h3 class="note-card__title">{title}</h3>
-  {description && <p class="note-card__desc">{description}</p>}
-  {
-    tags.length > 0 && (
-      <ul class="note-card__tags">
-        {tags.map((t) => <li>#{t}</li>)}
-      </ul>
-    )
-  }
+  <div class="note-row__body">
+    <h3 class="note-row__title">
+      {title}
+      {draft && <span class="note-row__draft">草稿</span>}
+    </h3>
+    {description && <p class="note-row__desc">{description}</p>}
+    {
+      tags.length > 0 && (
+        <ul class="note-row__tags">
+          {tags.map((t) => <li>#{t}</li>)}
+        </ul>
+      )
+    }
+  </div>
+  <span class="note-row__arrow" aria-hidden="true">→</span>
 </a>
 
 <style>
-  /* 流光描边卡片:hover 时边框流光,克制的一处流光点缀 */
-  .note-card {
+  .note-row {
     position: relative;
-    display: block;
-    height: 100%;
-    padding: var(--sp-6);
+    display: grid;
+    grid-template-columns: 7.5rem 1fr auto;
+    gap: var(--sp-5);
+    align-items: start;
+    padding: var(--sp-5) var(--sp-5);
     border-radius: var(--radius);
-    background:
-      linear-gradient(180deg, rgba(109, 139, 255, 0.05), transparent 42%),
-      var(--bg-1);
-    border: 1px solid var(--border);
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-    overflow: hidden;
-  }
-  /* 光标高光:在文字下方,坐标由 BaseLayout 的 data-spotlight 脚本写入 */
-  .note-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: var(--spotlight);
-    opacity: 0;
-    transition: opacity 0.25s ease;
-    pointer-events: none;
-  }
-  /* 流光描边。只在 hover 时才跑动画,否则每张卡都在后台空转一层渐变。 */
-  .note-card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: var(--flow);
-    background-size: 200% auto;
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0;
-    transition: opacity 0.25s ease;
-    pointer-events: none;
-  }
-  .note-card:hover {
-    transform: translateY(-3px);
-    border-color: transparent;
-    box-shadow: var(--shadow);
     color: var(--text-0);
+    transition: background 0.12s ease, box-shadow 0.12s ease;
   }
-  .note-card:hover::before {
-    opacity: 1;
+  /* 行间分隔线 */
+  .note-row::before {
+    content: '';
+    position: absolute;
+    inset: auto var(--sp-5) 0;
+    height: 1px;
+    background: var(--border);
   }
-  .note-card:hover::after {
-    opacity: 1;
-    animation: flow-border 4s linear infinite;
+  .note-row:hover {
+    color: var(--text-0);
+    background:
+      var(--spotlight),
+      color-mix(in srgb, var(--bg-1) 80%, transparent);
+    box-shadow:
+      inset 2px 0 0 var(--accent),
+      inset 0 0 0 1px var(--border),
+      -8px 0 24px -12px var(--accent);
   }
-  .note-card--draft {
-    border-style: dashed;
+  .note-row:hover::before {
+    opacity: 0;
+  }
+  .note-row--draft {
+    opacity: 0.75;
   }
 
-  .note-card__top {
+  .note-row__meta {
+    display: grid;
+    gap: var(--sp-1);
+    padding-top: 0.3rem;
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.04em;
+  }
+  .note-row__meta time {
+    color: var(--text-1);
+  }
+  .note-row:hover .note-row__meta time {
+    color: var(--accent);
+  }
+
+  .note-row__title {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
     gap: var(--sp-2);
     margin-bottom: var(--sp-2);
+    font-size: var(--fs-xl);
+    line-height: 1.35;
   }
-  .note-card__date {
-    color: var(--text-2);
-    font-size: var(--fs-xs);
-    font-family: var(--font-mono);
+  .note-row:hover .note-row__title {
+    background: var(--flow);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
-  .note-card__sep {
-    opacity: 0.5;
-    margin: 0 0.35em;
-  }
-  .note-card__draft {
+  .note-row__draft {
     color: var(--warn);
     font-size: var(--fs-xs);
     font-family: var(--font-mono);
-    padding: 0.1rem 0.4rem;
+    font-weight: 500;
+    padding: 0.1rem 0.45rem;
     border-radius: 999px;
-    border: 1px solid rgba(251, 191, 36, 0.35);
-    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+    background: color-mix(in srgb, var(--warn) 10%, transparent);
   }
-  .note-card__title {
-    font-size: var(--fs-xl);
-    color: var(--text-0);
-    margin-bottom: var(--sp-2);
-  }
-  .note-card__desc {
+  .note-row__desc {
+    max-width: 44rem;
+    margin-bottom: var(--sp-3);
     color: var(--text-1);
     font-size: var(--fs-sm);
-    margin-bottom: var(--sp-3);
+    line-height: 1.7;
   }
-  .note-card__tags {
+  .note-row__tags {
     list-style: none;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sp-2);
+    gap: var(--sp-3);
   }
-  .note-card__tags li {
-    color: var(--accent);
+  .note-row__tags li {
+    color: var(--accent-2);
     font-size: var(--fs-xs);
     font-family: var(--font-mono);
+  }
+
+  .note-row__arrow {
+    align-self: center;
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-lg);
+    transition: transform 0.12s ease, color 0.12s ease;
+  }
+  .note-row:hover .note-row__arrow {
+    color: var(--accent);
+    transform: translateX(4px);
+  }
+
+  @media (max-width: 640px) {
+    .note-row {
+      grid-template-columns: 1fr;
+      gap: var(--sp-2);
+      padding: var(--sp-4);
+    }
+    .note-row::before {
+      inset-inline: var(--sp-4);
+    }
+    .note-row__meta {
+      display: flex;
+      gap: var(--sp-3);
+      padding-top: 0;
+    }
+    .note-row__arrow {
+      display: none;
+    }
   }
 </style>

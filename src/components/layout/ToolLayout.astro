@@ -15,16 +15,19 @@ const others = tools.filter((t) => t.slug !== slug);
 ---
 
 <BaseLayout title={title} description={pageDescription ?? description}>
-  <section class="tool-head">
-    <a href="/tools/" class="tool-back">← 所有工具</a>
-    <h1 class="tool-title">{title}</h1>
-    <p class="tool-desc">{description}</p>
+  <section class="page-head tool-head">
+    <a href="/tools/" class="back-link">← cd ~/tools</a>
+    <p class="eyebrow">Tool · {slug}</p>
+    <h1 class="page-title tool-title">{title}</h1>
+    <p class="page-sub">{description}</p>
   </section>
   <slot />
   {
     others.length > 0 && (
       <nav class="tool-more" aria-label="其他工具">
-        <div class="tool-more__title">其他工具</div>
+        <div class="section-head">
+          <h2 class="section-title">其他工具</h2>
+        </div>
         <div class="tool-more__list">
           {others.map((t) => (
             <a href={`/tools/${t.slug}/`}>{t.short}</a>
@@ -39,35 +42,12 @@ const others = tools.filter((t) => t.slug !== slug);
   .tool-head {
     margin-bottom: var(--sp-8);
   }
-  .tool-back {
-    color: var(--text-2);
-    font-size: var(--fs-sm);
-  }
-  .tool-back:hover {
-    color: var(--accent);
-  }
   .tool-title {
-    font-size: var(--fs-2xl);
-    margin: var(--sp-4) 0 var(--sp-2);
-    letter-spacing: -0.02em;
-  }
-  .tool-desc {
-    color: var(--text-1);
-    max-width: 40rem;
+    font-size: clamp(1.875rem, 4vw, 2.5rem);
   }
 
   .tool-more {
     margin-top: var(--sp-12);
-    padding-top: var(--sp-6);
-    border-top: 1px solid var(--border);
-  }
-  .tool-more__title {
-    font-family: var(--font-mono);
-    font-size: var(--fs-xs);
-    color: var(--text-2);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: var(--sp-3);
   }
   .tool-more__list {
     display: flex;
@@ -76,16 +56,18 @@ const others = tools.filter((t) => t.slug !== slug);
   }
   .tool-more__list a {
     display: inline-flex;
-    padding: 0.35rem 0.7rem;
+    padding: 0.4rem 0.9rem;
     border-radius: 999px;
     border: 1px solid var(--border);
-    background: var(--bg-1);
+    background: color-mix(in srgb, var(--bg-1) 70%, transparent);
     color: var(--text-1);
     font-size: var(--fs-xs);
     font-family: var(--font-mono);
+    transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   }
   .tool-more__list a:hover {
     border-color: var(--accent);
     color: var(--accent);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 30%, transparent);
   }
 </style>

@@ -4,21 +4,23 @@ import { tools, toolsSummary } from '../../lib/tools/registry';
 ---
 
 <BaseLayout title="工具" description="Cube007 的开发小工具集合。">
-  <section class="hero">
-    <p class="hero__eyebrow">Dev Tools</p>
-    <h1 class="hero__title">开发小工具</h1>
-    <p class="hero__sub">纯前端、零上传、打开即用。</p>
-    <p class="hero__list">{toolsSummary()}</p>
+  <section class="page-head">
+    <p class="eyebrow">Dev Tools · {tools.length} modules</p>
+    <h1 class="page-title"><span class="flow-text">开发小工具</span></h1>
+    <p class="page-sub">纯前端、零上传、打开即用。{toolsSummary()}。</p>
   </section>
 
-  <div class="tools-grid">
+  <div class="bento">
     {
-      tools.map((t) => (
-        <a href={`/tools/${t.slug}/`} class="tool-card" data-spotlight>
-          <span class="tool-card__kicker">{t.short}</span>
-          <h3 class="tool-card__name">{t.name}</h3>
+      tools.map((t, i) => (
+        <a href={`/tools/${t.slug}/`} class="neon-card tool-card reveal" data-spotlight data-tilt>
+          <span class="tool-card__kicker">{String(i + 1).padStart(2, '0')} / {t.short}</span>
+          <h2 class="tool-card__name">{t.name}</h2>
           <p class="tool-card__desc">{t.desc}</p>
-          <span class="tool-card__status">可用</span>
+          <span class="tool-card__go">打开 →</span>
+          <span class="tool-card__glyph" aria-hidden="true">
+            <span>{t.short}</span>
+          </span>
         </a>
       ))
     }
@@ -26,111 +28,115 @@ import { tools, toolsSummary } from '../../lib/tools/registry';
 </BaseLayout>
 
 <style>
-  .hero {
-    margin-bottom: var(--sp-12);
-  }
-  .hero__eyebrow {
-    color: var(--accent-2);
-    font-family: var(--font-mono);
-    font-size: var(--fs-sm);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: var(--sp-3);
-  }
-  .hero__title {
-    font-size: var(--fs-3xl);
-    margin-bottom: var(--sp-4);
-    letter-spacing: -0.03em;
-  }
-  .hero__sub {
-    color: var(--text-1);
-    font-size: var(--fs-lg);
-    max-width: 44rem;
-  }
-  .hero__list {
-    color: var(--text-2);
-    font-size: var(--fs-sm);
-    font-family: var(--font-mono);
-    margin-top: var(--sp-3);
-    max-width: 44rem;
-  }
-
-  .tools-grid {
+  /* 4 列,第一个工具占 2×2,9 个工具正好铺满 3 行 */
+  .bento {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: minmax(10.5rem, auto);
     gap: var(--sp-4);
   }
-
   .tool-card {
-    position: relative;
-    display: grid;
-    align-content: start;
-    padding: var(--sp-6);
-    border-radius: var(--radius);
-    background:
-      linear-gradient(180deg, rgba(109, 139, 255, 0.04), transparent 40%),
-      var(--bg-1);
-    border: 1px solid var(--border);
-    color: var(--text-0);
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: var(--sp-5);
   }
-  .tool-card::after {
-    content: '';
-    position: absolute;
-    inset: auto -20% -40% auto;
-    width: 120px;
-    height: 120px;
-    background: radial-gradient(
-      circle,
-      color-mix(in srgb, var(--accent-3) 12%, transparent),
-      transparent 70%
-    );
-    pointer-events: none;
-  }
-  /* 光标高光,坐标由 BaseLayout 的 data-spotlight 脚本写入 */
-  .tool-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: var(--spotlight);
-    opacity: 0;
-    transition: opacity 0.25s ease;
-    pointer-events: none;
-  }
-  .tool-card:hover::before {
-    opacity: 1;
-  }
-  .tool-card:hover {
-    transform: translateY(-3px);
-    border-color: var(--border-strong);
-    box-shadow: var(--shadow);
-    color: var(--text-0);
+  .tool-card:first-child {
+    grid-column: span 2;
+    grid-row: span 2;
+    padding: var(--sp-8);
   }
   .tool-card__kicker {
+    color: var(--accent);
     font-family: var(--font-mono);
     font-size: var(--fs-xs);
-    color: var(--accent);
-    letter-spacing: 0.04em;
-    margin-bottom: var(--sp-2);
+    letter-spacing: 0.08em;
+    margin-bottom: var(--sp-3);
   }
   .tool-card__name {
     font-size: var(--fs-lg);
     margin-bottom: var(--sp-2);
   }
+  .tool-card:first-child .tool-card__name {
+    font-size: var(--fs-3xl);
+  }
   .tool-card__desc {
     color: var(--text-1);
     font-size: var(--fs-sm);
-    margin-bottom: var(--sp-4);
   }
-  .tool-card__status {
-    justify-self: start;
-    font-size: var(--fs-xs);
+  .tool-card:first-child .tool-card__desc {
+    font-size: var(--fs-lg);
+    max-width: 22rem;
+  }
+  .tool-card__go {
+    margin-top: auto;
+    padding-top: var(--sp-4);
+    color: var(--text-2);
     font-family: var(--font-mono);
-    padding: var(--sp-1) var(--sp-2);
-    border-radius: var(--radius-sm);
-    color: var(--ok);
-    background: color-mix(in srgb, var(--ok) 10%, transparent);
+    font-size: var(--fs-xs);
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+  .tool-card:hover .tool-card__go {
+    color: var(--accent);
+    transform: translateX(4px);
+  }
+
+  /*
+    背景里一个镂空大字标,hover 时描边亮起。
+    外层负责裁剪 —— 卡片自己不能 overflow:hidden,否则会把 1px 的旋转描边裁掉。
+  */
+  .tool-card__glyph {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .tool-card__glyph span {
+    transform: translate(0.05em, 0.22em);
+    font-family: var(--font-mono);
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+    color: transparent;
+    -webkit-text-stroke: 1px var(--border-strong);
+    transition: -webkit-text-stroke-color 0.3s ease, transform 0.3s ease;
+  }
+  .tool-card:first-child .tool-card__glyph span {
+    font-size: 11rem;
+  }
+  .tool-card:hover .tool-card__glyph span {
+    -webkit-text-stroke-color: color-mix(in srgb, var(--accent) 60%, transparent);
+    transform: translate(0.05em, 0.15em);
+  }
+
+  @media (max-width: 900px) {
+    .bento {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .tool-card:first-child {
+      grid-row: span 1;
+      padding: var(--sp-6);
+    }
+    .tool-card:first-child .tool-card__name {
+      font-size: var(--fs-2xl);
+    }
+    .tool-card:first-child .tool-card__glyph span {
+      font-size: 7rem;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .bento {
+      grid-template-columns: 1fr;
+    }
+    .tool-card:first-child {
+      grid-column: auto;
+    }
   }
 </style>

@@ -17,6 +17,7 @@ const items = buildPalette({
 <dialog id="cmdk" class="cmdk" aria-label="快捷搜索">
   <div class="cmdk__box">
     <label class="cmdk__search">
+      <span class="cmdk__prompt" aria-hidden="true">&gt;</span>
       <span class="sr-only">快捷搜索</span>
       <input
         id="cmdk-q"
@@ -25,9 +26,14 @@ const items = buildPalette({
         autocomplete="off"
         spellcheck="false"
       />
+      <kbd>esc</kbd>
     </label>
     <ul id="cmdk-list" class="cmdk__list" role="listbox"></ul>
-    <p class="cmdk__hint">↑↓ 选择 · Enter 打开 · Esc 关闭</p>
+    <p class="cmdk__hint">
+      <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span>
+      <span><kbd>↵</kbd> 打开</span>
+      <span id="cmdk-count" class="cmdk__count"></span>
+    </p>
   </div>
 </dialog>
 
@@ -39,10 +45,12 @@ const items = buildPalette({
   const dialog = document.getElementById('cmdk') as HTMLDialogElement;
   const input = document.getElementById('cmdk-q') as HTMLInputElement;
   const list = document.getElementById('cmdk-list') as HTMLUListElement;
+  const count = document.getElementById('cmdk-count') as HTMLSpanElement;
   const raw = document.getElementById('palette-data')?.textContent ?? '[]';
   const items = JSON.parse(raw) as PaletteItem[];
 
   let selected = 0;
+  let rows: HTMLAnchorElement[] = [];
 
   function isTypingTarget(el: EventTarget | null): boolean {
     if (!(el instanceof HTMLElement)) return false;
@@ -61,35 +69,40 @@ const items = buildPalette({
 
   function render() {
     const hits = filterPalette(items, input.value);
-    if (selected >= hits.length) selected = Math.max(0, hits.length - 1);
-    if (hits.length === 0) {
-      list.innerHTML = `<li class="cmdk__empty">没有匹配结果</li>`;
-      return;
-    }
-    list.innerHTML = hits
-      .map(
-        (item, i) => `
+    count.textContent = `${hits.length} 条结果`;
+    list.innerHTML = hits.length
+      ? hits
+          .map(
+            (item, i) => `
       <li>
-        <a
-          class="cmdk__item${i === selected ? ' is-active' : ''}"
-          href="${escapeHtml(item.href)}"
-          data-index="${i}"
-          role="option"
-          aria-selected="${i === selected ? 'true' : 'false'}"
-        >
+        <a class="cmdk__item" href="${escapeHtml(item.href)}" data-index="${i}" data-kind="${escapeHtml(item.kind)}" role="option" aria-selected="false">
           <span class="cmdk__kind">${escapeHtml(item.kind)}</span>
           <span class="cmdk__title">${escapeHtml(item.title)}</span>
           ${item.hint ? `<span class="cmdk__item-hint">${escapeHtml(item.hint)}</span>` : ''}
+          <span class="cmdk__enter" aria-hidden="true">↵</span>
         </a>
       </li>`
-      )
-      .join('');
+          )
+          .join('')
+      : `<li class="cmdk__empty">没有匹配结果</li>`;
+    rows = [...list.querySelectorAll<HTMLAnchorElement>('.cmdk__item')];
+    select(0);
+  }
+
+  function select(i: number, scroll = false) {
+    rows[selected]?.classList.remove('is-active');
+    rows[selected]?.setAttribute('aria-selected', 'false');
+    selected = Math.min(Math.max(0, i), Math.max(0, rows.length - 1));
+    const row = rows[selected];
+    if (!row) return;
+    row.classList.add('is-active');
+    row.setAttribute('aria-selected', 'true');
+    if (scroll) row.scrollIntoView({ block: 'nearest' });
   }
 
   function openPalette() {
     if (!dialog.open) dialog.showModal();
     input.value = '';
-    selected = 0;
     render();
     input.focus();
   }
@@ -99,7 +112,7 @@ const items = buildPalette({
   }
 
   function goSelected() {
-    const active = list.querySelector<HTMLAnchorElement>('.cmdk__item.is-active');
+    const active = rows[selected];
     if (active?.href) {
       closePalette();
       location.href = active.href;
@@ -127,32 +140,23 @@ const items = buildPalette({
       closePalette();
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      selected += 1;
-      render();
-      list.querySelector('.cmdk__item.is-active')?.scrollIntoView({ block: 'nearest' });
+      select(selected + 1, true);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      selected = Math.max(0, selected - 1);
-      render();
-      list.querySelector('.cmdk__item.is-active')?.scrollIntoView({ block: 'nearest' });
+      select(selected - 1, true);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       goSelected();
     }
   });
 
-  input.addEventListener('input', () => {
-    selected = 0;
-    render();
-  });
+  input.addEventListener('input', render);
 
   list.addEventListener('mousemove', (e) => {
     const item = (e.target as HTMLElement).closest<HTMLAnchorElement>('[data-index]');
     if (!item) return;
     const i = Number(item.dataset.index);
-    if (i === selected) return;
-    selected = i;
-    render();
+    if (i !== selected) select(i);
   });
 
   dialog.addEventListener('click', (e) => {
@@ -167,73 +171,127 @@ const items = buildPalette({
   });
 </script>
 
-<style>
+<!-- 列表项由脚本 innerHTML 生成，拿不到作用域属性，所以用全局样式并以 .cmdk 前缀隔离 -->
+<style is:global>
   .cmdk {
     position: fixed;
-    top: 16vh;
+    top: 14vh;
     left: 50%;
     transform: translateX(-50%);
     margin: 0;
-    width: min(36rem, calc(100vw - 2rem));
-    max-height: min(28rem, 80vh);
+    width: min(40rem, calc(100vw - 2rem));
+    max-height: min(30rem, 80vh);
     padding: 0;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius);
     background: var(--bg-1);
     color: var(--text-0);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow), var(--neon-glow);
+    overflow: hidden;
+  }
+  .cmdk[open] {
+    animation: cmdk-in 0.14s ease-out;
+  }
+  @keyframes cmdk-in {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-6px) scale(0.98);
+    }
+  }
+  .cmdk::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: var(--flow);
   }
   .cmdk::backdrop {
-    background: rgba(7, 8, 12, 0.72);
-    backdrop-filter: blur(6px);
+    background: rgba(3, 4, 8, 0.78);
   }
   .cmdk__box {
     display: grid;
     grid-template-rows: auto 1fr auto;
-    max-height: min(28rem, 80vh);
+    max-height: min(30rem, 80vh);
   }
+
   .cmdk__search {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: 0 var(--sp-4);
     border-bottom: 1px solid var(--border);
   }
+  .cmdk__prompt {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--accent);
+    text-shadow: 0 0 8px var(--accent);
+  }
   .cmdk__search input {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     background: transparent;
     border: 0;
     color: var(--text-0);
     font-size: var(--fs-lg);
-    padding: var(--sp-4) var(--sp-5);
+    padding: var(--sp-4) 0;
     outline: none;
+    box-shadow: none;
+    caret-color: var(--accent);
   }
+  .cmdk__search input::placeholder {
+    color: var(--text-2);
+  }
+  .cmdk__search input::-webkit-search-cancel-button {
+    display: none;
+  }
+
   .cmdk__list {
     list-style: none;
+    margin: 0;
     overflow: auto;
     padding: var(--sp-2);
     min-height: 8rem;
   }
   .cmdk__item {
+    position: relative;
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: 3rem minmax(0, 1fr) auto;
+    align-items: center;
     column-gap: var(--sp-3);
-    row-gap: 0.1rem;
-    padding: var(--sp-3) var(--sp-3);
+    padding: 0.55rem var(--sp-3);
     border-radius: var(--radius-sm);
     color: var(--text-0);
+    text-decoration: none;
   }
   .cmdk__item.is-active {
-    background: color-mix(in srgb, var(--accent) 14%, var(--bg-2));
-    color: var(--text-0);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-2));
+    box-shadow: inset 2px 0 0 var(--accent);
   }
   .cmdk__kind {
     grid-row: 1 / span 2;
-    align-self: center;
+    justify-self: start;
     font-family: var(--font-mono);
-    font-size: var(--fs-xs);
-    color: var(--accent);
-    min-width: 2.5rem;
+    font-size: 0.6875rem;
+    line-height: 1;
+    padding: 0.3rem 0.4rem;
+    border-radius: 4px;
+    color: var(--kind, var(--accent));
+    background: color-mix(in srgb, var(--kind, var(--accent)) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--kind, var(--accent)) 30%, transparent);
+  }
+  .cmdk__item[data-kind='工具'] {
+    --kind: var(--accent-2);
+  }
+  .cmdk__item[data-kind='笔记'] {
+    --kind: var(--accent-3);
   }
   .cmdk__title {
     font-size: var(--fs-sm);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .cmdk__item-hint {
     grid-column: 2;
@@ -243,28 +301,39 @@ const items = buildPalette({
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .cmdk__enter {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    opacity: 0;
+  }
+  .cmdk__item.is-active .cmdk__enter {
+    opacity: 1;
+  }
   .cmdk__empty {
     color: var(--text-2);
+    font-family: var(--font-mono);
     font-size: var(--fs-sm);
     padding: var(--sp-6) var(--sp-3);
     text-align: center;
   }
+
   .cmdk__hint {
+    display: flex;
+    gap: var(--sp-4);
+    margin: 0;
     border-top: 1px solid var(--border);
     color: var(--text-2);
     font-size: var(--fs-xs);
     font-family: var(--font-mono);
     padding: var(--sp-2) var(--sp-4);
   }
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+  .cmdk__hint kbd + kbd {
+    margin-left: 0.2rem;
+  }
+  .cmdk__count {
+    margin-left: auto;
   }
 </style>
+

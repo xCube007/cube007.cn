@@ -1,8 +1,9 @@
 ---
 import BaseLayout from '../components/layout/BaseLayout.astro';
 import NoteCard from '../components/notes/NoteCard.astro';
+import TagChip from '../components/notes/TagChip.astro';
 import { getVisibleNotes } from '../lib/notes';
-import { tools, toolsSummary } from '../lib/tools/registry';
+import { tools } from '../lib/tools/registry';
 
 // 时间流:按日期倒序;开发环境含草稿,生产构建排除
 const notes = await getVisibleNotes();
@@ -13,301 +14,464 @@ for (const note of notes) {
   }
 }
 const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
+
+const command = '$ cube007 --notes --tools --ai';
+const stats = [
+  { label: 'NOTES', value: notes.length },
+  { label: 'TOOLS', value: tools.length },
+  { label: 'TAGS', value: tags.length },
+];
 ---
 
 <BaseLayout>
-  <section class="hero">
-    <p class="hero__eyebrow">Notes &amp; Tools</p>
+  <section class="hero" id="hero">
+    <div class="hero__fx" aria-hidden="true">
+      <span class="aurora aurora--a"></span>
+      <span class="aurora aurora--b"></span>
+      <span class="aurora aurora--c"></span>
+      <div class="hero__floor"><div></div></div>
+    </div>
+
+    <p class="eyebrow">Notes &amp; Tools · Online</p>
     <h1 class="hero__title">
-      <span class="flow-text">Cube007</span> 的学习笔记
+      <span class="hero__name" data-decode>Cube007</span>
+      <span class="hero__tagline">的学习笔记</span>
     </h1>
+    <p class="hero__cmd" aria-hidden="true">
+      <span style={`--n: ${command.length}`}>{command}</span>
+    </p>
     <p class="hero__sub">
-      记录后端与 AI 的学习过程,顺手放一些日常用得上的开发小工具。
+      记录后端与 AI 的学习过程,顺手放一些日常用得上的开发小工具。纯静态,零后端,打开即用。
     </p>
     <dl class="hero__stats">
-      <div>
-        <dt>笔记</dt>
-        <dd>{notes.length}</dd>
-      </div>
-      <div>
-        <dt>工具</dt>
-        <dd>{tools.length}</dd>
-      </div>
-      <div>
-        <dt>标签</dt>
-        <dd>{tags.length}</dd>
-      </div>
-    </dl>
-    <div class="hero__actions">
-      <a class="btn btn--primary" href="/tools/">打开工具</a>
-      <a class="btn btn--ghost" href="/search/">搜索笔记</a>
-    </div>
-    <div class="hero__line"></div>
-  </section>
-
-  <section class="feed">
-    <div class="section-head">
-      <h2 class="section-title">最新笔记</h2>
-      <a class="section-link" href="/tags/">按标签浏览 →</a>
-    </div>
-    {
-      notes.length === 0 ? (
-        <p class="empty">还没有笔记,稍后再来。</p>
-      ) : (
-        <div class="feed__grid">
-          {notes.map((note) => <NoteCard note={note} />)}
-        </div>
-      )
-    }
-  </section>
-
-  {
-    tags.length > 0 && (
-      <section class="home-tags">
-        <div class="section-head">
-          <h2 class="section-title">标签</h2>
-          <a class="section-link" href="/tags/">
-            全部标签 →
-          </a>
-        </div>
-        <div class="home-tags__list">
-          {tags.map(([tag, count]) => (
-            <a href={`/tags/${tag}/`}>
-              #{tag}
-              <span>{count}</span>
-            </a>
-          ))}
-        </div>
-      </section>
-    )
-  }
-
-  <section class="tools-teaser">
-    <div class="section-head">
-      <h2 class="section-title">开发小工具</h2>
-      <a class="section-link" href="/tools/">全部工具 →</a>
-    </div>
-    <p class="tools-teaser__desc">
-      {toolsSummary()} —— 纯浏览器运行,数据不上传。按 <kbd>/</kbd> 可快捷搜索。
-    </p>
-    <div class="tools-teaser__grid">
       {
-        tools.map((t) => (
-          <a href={`/tools/${t.slug}/`} class="tools-teaser__card" data-spotlight>
-            <span class="tools-teaser__name">{t.name}</span>
-            <span class="tools-teaser__desc-card">{t.desc}</span>
-          </a>
+        stats.map((s) => (
+          <div>
+            <dt>{s.label}</dt>
+            <dd data-count={s.value}>{s.value}</dd>
+          </div>
         ))
       }
+    </dl>
+    <div class="hero__actions">
+      <a class="btn btn--primary" href="#feed">浏览笔记 ↓</a>
+      <a class="btn" href="/tools/">打开工具箱</a>
     </div>
   </section>
+
+  <div class="home" id="feed">
+    <section class="feed">
+      <div class="section-head">
+        <h2 class="section-title">最新笔记</h2>
+        <a class="section-link" href="/tags/">按标签浏览 →</a>
+      </div>
+      {
+        notes.length === 0 ? (
+          <p class="empty">还没有笔记,稍后再来。</p>
+        ) : (
+          <div class="feed__list">
+            {notes.map((note) => <NoteCard note={note} />)}
+          </div>
+        )
+      }
+    </section>
+
+    <aside class="side">
+      {
+        tags.length > 0 && (
+          <section class="panel reveal">
+            <div class="section-head">
+              <h2 class="section-title">标签</h2>
+            </div>
+            <ul class="panel__tags">
+              {tags.map(([tag, count]) => (
+                <li>
+                  <TagChip name={tag} count={count} href={`/tags/${tag}/`} size="sm" />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      <section class="panel reveal">
+        <div class="section-head">
+          <h2 class="section-title">工具箱</h2>
+          <a class="section-link" href="/tools/">全部 →</a>
+        </div>
+        <ol class="panel__tools">
+          {
+            tools.map((t, i) => (
+              <li>
+                <a href={`/tools/${t.slug}/`}>
+                  <span class="panel__idx">{String(i + 1).padStart(2, '0')}</span>
+                  <span class="panel__name">{t.name}</span>
+                  <span class="panel__go" aria-hidden="true">
+                    →
+                  </span>
+                </a>
+              </li>
+            ))
+          }
+        </ol>
+        <p class="panel__hint">任意页面按 <kbd>/</kbd> 快速搜索</p>
+      </section>
+    </aside>
+  </div>
 </BaseLayout>
 
+<script>
+  const hero = document.getElementById('hero');
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // 离屏暂停:Hero 的极光/网格/光标是常驻动画,滚出视口就停
+  if (hero) {
+    new IntersectionObserver(([entry]) => {
+      hero.classList.toggle('is-paused', !entry.isIntersecting);
+    }).observe(hero);
+  }
+
+  if (!calm) {
+    // 解码标题:每一位先乱跳,再按顺序定格成真字
+    const GLYPHS = '!<>-_\\/[]{}=+*^?#01ABCDEF';
+    document.querySelectorAll<HTMLElement>('[data-decode]').forEach((el) => {
+      const text = el.textContent ?? '';
+      const start = performance.now();
+      const tick = (now: number) => {
+        const settled = Math.floor((now - start) / 70);
+        el.textContent = [...text]
+          .map((ch, i) => (i < settled ? ch : GLYPHS[(Math.random() * GLYPHS.length) | 0]))
+          .join('');
+        if (settled < text.length) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+
+    // 数字从 0 滚到实际值
+    document.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
+      const target = Number(el.dataset.count);
+      const start = performance.now();
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - start) / 1200);
+        el.textContent = String(Math.round(target * (1 - (1 - t) ** 3)));
+        if (t < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+</script>
+
 <style>
+  /* ---------------- Hero ---------------- */
   .hero {
-    margin-bottom: var(--sp-12);
-    padding-top: var(--sp-8);
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: calc(100svh - 7rem);
+    padding: var(--sp-8) 0 22vh;
+    margin-top: calc(-1 * var(--sp-12));
   }
-  .hero__eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--sp-2);
-    color: var(--accent);
-    font-family: var(--font-mono);
-    font-size: var(--fs-sm);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: var(--sp-3);
+
+  /* 特效层撑满整个视口宽度,不受 main 的 max-width 限制 */
+  .hero__fx {
+    position: absolute;
+    top: -6rem;
+    bottom: 0;
+    left: 50%;
+    width: 100vw;
+    margin-left: -50vw;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
   }
-  /* 前面一点会呼吸的指示灯,给标题一个起点 */
-  .hero__eyebrow::before {
-    content: '';
-    width: 6px;
-    height: 6px;
+  .aurora {
+    position: absolute;
     border-radius: 50%;
+    filter: blur(110px);
+    opacity: 0.24;
+    animation: aurora 18s ease-in-out infinite;
+  }
+  .aurora--a {
+    width: 38vw;
+    height: 38vw;
+    top: -16vw;
+    right: 0;
+    background: var(--accent-2);
+  }
+  .aurora--b {
+    width: 30vw;
+    height: 30vw;
+    top: -4vw;
+    left: -8vw;
+    background: var(--accent);
+    opacity: 0.22;
+    animation-duration: 22s;
+    animation-direction: reverse;
+  }
+  .aurora--c {
+    width: 22vw;
+    height: 22vw;
+    top: 10vw;
+    right: 26vw;
     background: var(--accent-3);
-    box-shadow: 0 0 8px var(--accent-3);
-    animation: pulse-dot 2.4s ease-in-out infinite;
+    opacity: 0.16;
+    animation-duration: 26s;
+    animation-delay: -8s;
   }
+
+  /*
+    透视网格地面:消失点钉在这块区域的顶边(地平线),
+    网格平面以底边为轴向远处倒下去,背景位置下移制造前进感。
+    平面别再加大 —— 3D 图层太大浏览器会直接不画。
+  */
+  .hero__floor {
+    position: absolute;
+    inset: auto 0 0;
+    height: 42%;
+    perspective: 300px;
+    perspective-origin: 50% 0;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to top, #000 30%, transparent 85%);
+    mask-image: linear-gradient(to top, #000 30%, transparent 85%);
+  }
+  .hero__floor > div {
+    position: absolute;
+    left: -150%;
+    right: -150%;
+    bottom: 0;
+    height: 1200px;
+    transform-origin: 50% 100%;
+    transform: rotateX(80deg);
+  }
+  .hero__floor > div::before {
+    --grid-size: 80px;
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, color-mix(in srgb, var(--accent) 75%, transparent) 2px, transparent 2px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--accent) 60%, transparent) 2px, transparent 2px);
+    background-size: var(--grid-size) var(--grid-size);
+    animation: grid-scroll 1.2s linear infinite;
+  }
+  /* 地平线一道光 */
+  .hero__fx::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 28%;
+    height: 160px;
+    transform: translateY(50%);
+    background: radial-gradient(
+      ellipse 45% 40% at 50% 50%,
+      color-mix(in srgb, var(--accent) 22%, transparent),
+      transparent 70%
+    );
+  }
+  /* 底部融进页面背景 */
+  .hero__fx::before {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 8%;
+    z-index: 1;
+    background: linear-gradient(to top, var(--bg-0), transparent);
+  }
+  .hero.is-paused .aurora,
+  .hero.is-paused .hero__floor > div::before,
+  .hero.is-paused .hero__cmd span,
+  .hero.is-paused :global(.eyebrow)::before {
+    animation-play-state: paused;
+  }
+
   .hero__title {
-    font-size: clamp(2rem, 5vw, 3rem);
-    margin-bottom: var(--sp-4);
-    letter-spacing: -0.03em;
+    display: grid;
+    margin-bottom: var(--sp-5);
+    font-size: clamp(3rem, 10vw, 7.5rem);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
   }
+  .hero__name {
+    font-family: var(--font-mono);
+    background: var(--flow);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 28px color-mix(in srgb, var(--accent) 35%, transparent));
+  }
+  .hero__tagline {
+    font-size: 0.42em;
+    letter-spacing: -0.02em;
+    margin-top: var(--sp-3);
+    color: var(--text-0);
+  }
+
+  /* 终端打字:宽度按字符数一格一格展开,末尾一个闪烁光标 */
+  .hero__cmd {
+    margin-bottom: var(--sp-5);
+    font-family: var(--font-mono);
+    font-size: clamp(0.8rem, 2vw, var(--fs-base));
+    color: var(--accent);
+  }
+  .hero__cmd span {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    vertical-align: bottom;
+    width: calc(var(--n) * 1ch + 0.15em);
+    border-right: 0.6em solid var(--accent);
+    animation:
+      typing 1.8s steps(var(--n)) 0.9s both,
+      caret 1s step-end infinite;
+  }
+
   .hero__sub {
+    max-width: 36rem;
     color: var(--text-1);
     font-size: var(--fs-lg);
-    max-width: 40rem;
+    line-height: 1.7;
   }
+
   .hero__stats {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--sp-6);
-    margin: var(--sp-6) 0 var(--sp-5);
-  }
-  .hero__stats div {
-    min-width: 4.5rem;
+    gap: var(--sp-10);
+    margin: var(--sp-8) 0;
   }
   .hero__stats dt {
+    margin-bottom: var(--sp-1);
     color: var(--text-2);
     font-family: var(--font-mono);
     font-size: var(--fs-xs);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: var(--sp-1);
+    letter-spacing: 0.16em;
   }
   .hero__stats dd {
-    font-size: var(--fs-2xl);
-    font-weight: 650;
-    letter-spacing: -0.03em;
+    font-family: var(--font-mono);
+    font-size: var(--fs-3xl);
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
     color: var(--text-0);
+    text-shadow: 0 0 24px color-mix(in srgb, var(--accent) 45%, transparent);
   }
+
   .hero__actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--sp-3);
   }
-  .hero__actions kbd,
-  .tools-teaser__desc kbd {
-    font-family: var(--font-mono);
-    font-size: var(--fs-xs);
-    padding: 0.1rem 0.35rem;
-    border: 1px solid var(--border-strong);
-    border-radius: 4px;
-    color: var(--text-1);
-  }
-  /* 流光点缀:hero 下的呼吸光带 */
-  .hero__line {
-    margin-top: var(--sp-8);
-    height: 2px;
-    width: 100%;
-    background: var(--flow);
-    background-size: 200% auto;
-    border-radius: 2px;
-    animation: flow-line 5s ease-in-out infinite;
-  }
 
-  .section-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--sp-4);
-    margin-bottom: var(--sp-6);
-  }
-  .section-title {
-    font-size: var(--fs-sm);
-    font-family: var(--font-mono);
-    color: var(--text-2);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin: 0;
-  }
-  .section-link {
-    color: var(--text-2);
-    font-size: var(--fs-sm);
-    white-space: nowrap;
-  }
-  .section-link:hover {
-    color: var(--accent);
-  }
-
-  .feed__grid {
+  /* ---------------- 主体:笔记流 + 侧栏 ---------------- */
+  .home {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--sp-4);
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: var(--sp-10);
+    align-items: start;
+    scroll-margin-top: 5rem;
+  }
+  .feed__list {
+    margin: 0 calc(-1 * var(--sp-5));
   }
 
-  .home-tags {
-    margin-top: var(--sp-12);
+  .side {
+    position: sticky;
+    top: 5.5rem;
+    display: grid;
+    gap: var(--sp-5);
   }
-  .home-tags__list {
+  .panel {
+    padding: var(--sp-5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background:
+      linear-gradient(160deg, color-mix(in srgb, var(--accent-2) 7%, transparent), transparent 55%),
+      color-mix(in srgb, var(--bg-1) 80%, transparent);
+  }
+  .panel .section-head {
+    margin-bottom: var(--sp-4);
+  }
+  .panel__tags {
+    list-style: none;
     display: flex;
     flex-wrap: wrap;
     gap: var(--sp-2);
   }
-  .home-tags__list a {
-    display: inline-flex;
+  .panel__tools {
+    list-style: none;
+    display: grid;
+  }
+  .panel__tools a {
+    display: flex;
     align-items: center;
-    gap: var(--sp-2);
-    padding: 0.35rem 0.7rem;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: var(--bg-1);
-    color: var(--accent);
+    gap: var(--sp-3);
+    padding: var(--sp-2) var(--sp-2);
+    margin: 0 calc(-1 * var(--sp-2));
+    border-radius: var(--radius-sm);
+    color: var(--text-1);
+    font-size: var(--fs-sm);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .panel__tools a:hover {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--text-0);
+  }
+  .panel__idx {
+    color: var(--text-2);
     font-family: var(--font-mono);
     font-size: var(--fs-xs);
   }
-  .home-tags__list a:hover {
-    border-color: var(--accent);
+  .panel__tools a:hover .panel__idx,
+  .panel__tools a:hover .panel__go {
+    color: var(--accent);
   }
-  .home-tags__list span {
-    color: var(--text-2);
+  .panel__name {
+    flex: 1;
   }
-
-  .tools-teaser {
-    position: relative;
-    overflow: hidden;
-    margin-top: var(--sp-12);
-    padding: var(--sp-6);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background:
-      radial-gradient(
-        500px 160px at 100% 0%,
-        color-mix(in srgb, var(--accent-2) 12%, transparent),
-        transparent 60%
-      ),
-      var(--bg-1);
+  .panel__go {
+    color: transparent;
+    font-family: var(--font-mono);
+    transition: color 0.15s ease;
   }
-  /* 顶边一道流光,把工具区和上面的笔记流分开 */
-  .tools-teaser::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 auto;
-    height: 1px;
-    background: var(--flow);
-    opacity: 0.6;
-  }
-  .tools-teaser .section-head {
-    margin-bottom: var(--sp-3);
-  }
-  .tools-teaser__desc {
-    color: var(--text-1);
-    margin: 0 0 var(--sp-4);
-    max-width: 44rem;
-  }
-  .tools-teaser__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: var(--sp-3);
-  }
-  .tools-teaser__card {
-    position: relative;
-    display: grid;
-    gap: var(--sp-1);
-    padding: var(--sp-4);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    background: var(--bg-2);
-    color: var(--text-0);
-    overflow: hidden;
-    transition: border-color 0.15s ease, transform 0.15s ease;
-  }
-  .tools-teaser__card:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-    color: var(--text-0);
-  }
-  .tools-teaser__name {
-    font-size: var(--fs-sm);
-    font-weight: 600;
-  }
-  .tools-teaser__desc-card {
+  .panel__hint {
+    margin-top: var(--sp-4);
     color: var(--text-2);
     font-size: var(--fs-xs);
   }
 
   .empty {
     color: var(--text-2);
+  }
+
+  @media (max-width: 960px) {
+    .home {
+      grid-template-columns: 1fr;
+    }
+    .side {
+      position: static;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+  }
+
+  @media (max-width: 680px) {
+    .hero {
+      min-height: auto;
+      margin-top: calc(-1 * var(--sp-8));
+      padding-bottom: 32vw;
+    }
+    .aurora {
+      opacity: 0.35;
+    }
+    .hero__stats {
+      gap: var(--sp-6);
+    }
+    .hero__stats dd {
+      font-size: var(--fs-2xl);
+    }
+    .feed__list {
+      margin: 0 calc(-1 * var(--sp-4));
+    }
   }
 </style>

@@ -6,33 +6,44 @@
      2. public/admin/preview.css(构建前生成,容器前缀会被剥掉,见
         scripts/admin-theme.mjs)
    所以后台预览看到的排版,就是发布后的排版。
+   选择器一律写成 `.note__body <后代>`,否则改写脚本会在构建时报错。
    ========================================================================== */
 
 .note__body {
-  font-size: 1.05rem;
-  line-height: 1.8;
+  font-size: 1.0625rem;
+  line-height: 1.85;
 }
 
 .note__body p {
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-5);
   color: var(--text-0);
 }
 
 .note__body h2 {
-  font-size: var(--fs-xl);
-  margin: var(--sp-10) 0 var(--sp-3);
-  padding-top: var(--sp-2);
-  scroll-margin-top: 5rem;
+  font-size: var(--fs-2xl);
+  margin: var(--sp-12) 0 var(--sp-4);
+  scroll-margin-top: 5.5rem;
+}
+
+/* 霓虹 # 标记 */
+.note__body h2::before {
+  content: '#';
+  margin-right: 0.45em;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  text-shadow: 0 0 14px var(--accent);
 }
 
 .note__body h3 {
-  font-size: var(--fs-lg);
-  margin: var(--sp-6) 0 var(--sp-2);
+  font-size: var(--fs-xl);
+  margin: var(--sp-8) 0 var(--sp-3);
+  scroll-margin-top: 5.5rem;
 }
 
 .note__body ul,
 .note__body ol {
-  margin: 0 0 var(--sp-4) var(--sp-6);
+  margin: 0 0 var(--sp-5) var(--sp-6);
   color: var(--text-0);
 }
 
@@ -40,56 +51,144 @@
   margin-bottom: var(--sp-2);
 }
 
+.note__body li::marker {
+  color: var(--accent);
+}
+
+.note__body strong {
+  color: var(--text-0);
+  background: linear-gradient(
+    transparent 62%,
+    color-mix(in srgb, var(--accent-2) 30%, transparent) 0
+  );
+}
+
 .note__body blockquote {
-  border-left: 3px solid var(--accent);
-  padding: var(--sp-3) var(--sp-4);
-  margin: var(--sp-4) 0;
+  margin: var(--sp-6) 0;
+  padding: var(--sp-4) var(--sp-5);
+  border-left: 2px solid;
+  border-image: linear-gradient(180deg, var(--accent), var(--accent-3)) 1;
   color: var(--text-1);
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--accent) 8%, transparent),
-    transparent 70%
+    color-mix(in srgb, var(--accent) 9%, transparent),
+    transparent 75%
   );
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
-.note__body code {
-  background: var(--bg-2);
-  padding: 0.15em 0.4em;
-  border-radius: var(--radius-sm);
-  color: var(--accent-3);
+.note__body blockquote p:last-child {
+  margin-bottom: 0;
 }
 
+/* 行内代码 */
+.note__body :not(pre) > code {
+  padding: 0.12em 0.42em;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  color: var(--accent);
+  font-size: 0.88em;
+}
+
+/* 代码块:Shiki 会在 pre 上写内联背景色,这里统一压成站点的底色 */
 .note__body pre {
-  background: var(--bg-2);
+  margin: 0 0 var(--sp-5);
+  padding: var(--sp-4) var(--sp-5);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: var(--sp-4);
+  background-color: var(--bg-1) !important;
   overflow-x: auto;
-  margin: 0;
+  line-height: 1.7;
 }
 
 .note__body pre code {
   background: none;
   padding: 0;
-  color: var(--text-0);
+  border: 0;
+  color: inherit;
+  font-size: var(--fs-sm);
 }
 
+/*
+  终端窗口:.code-block 包裹层只在站点上由 code-copy.ts 加,
+  后台预览里没有它,代码块就退回上面那个普通圆角框。
+*/
 .note__body .code-block {
   position: relative;
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-6);
+  padding-top: 2.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-1);
+  overflow: hidden;
+  box-shadow: 0 16px 40px -20px color-mix(in srgb, var(--accent) 30%, transparent);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.note__body .code-block:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow: 0 16px 48px -16px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* 标题栏 + 三个圆点 */
+.note__body .code-block::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2.4rem;
+  border-bottom: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 1.1rem 50%, var(--err) 0 5px, transparent 5.5px),
+    radial-gradient(circle at 1.9rem 50%, var(--warn) 0 5px, transparent 5.5px),
+    radial-gradient(circle at 2.7rem 50%, var(--ok) 0 5px, transparent 5.5px),
+    var(--bg-2);
+}
+
+/* 左侧一条霓虹竖线 */
+.note__body .code-block::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2.4rem;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-3));
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.note__body .code-block pre {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+/* 语言标签:定位参照的是 .code-block,所以不会跟着代码横向滚动 */
+.note__body .code-block pre[data-language]::before {
+  content: attr(data-language);
+  position: absolute;
+  top: 0;
+  left: 3.6rem;
+  height: 2.4rem;
+  line-height: 2.4rem;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .note__body .code-block__copy {
   position: absolute;
-  top: var(--sp-2);
-  right: var(--sp-2);
+  top: 0.45rem;
+  right: 0.6rem;
+  z-index: 1;
   background: var(--bg-1);
   border: 1px solid var(--border);
   color: var(--text-1);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  padding: var(--sp-1) var(--sp-3);
-  border-radius: var(--radius-sm);
+  padding: 0.1rem var(--sp-3);
+  border-radius: 999px;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
@@ -103,22 +202,30 @@
 .note__body .code-block__copy:hover {
   border-color: var(--accent);
   color: var(--accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .note__body a {
-  text-underline-offset: 0.15em;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.note__body a:hover {
+  text-decoration-color: currentColor;
 }
 
 .note__body hr {
   border: 0;
-  border-top: 1px solid var(--border);
-  margin: var(--sp-8) 0;
+  height: 1px;
+  margin: var(--sp-10) 0;
+  background: linear-gradient(90deg, transparent, var(--accent-2), transparent);
 }
 
 .note__body table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-5);
   font-size: var(--fs-sm);
 }
 
@@ -129,6 +236,15 @@
 }
 
 .note__body th {
-  background: var(--bg-1);
+  background: var(--bg-2);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
   text-align: left;
+  text-transform: uppercase;
+}
+
+.note__body tr:hover td {
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
 }

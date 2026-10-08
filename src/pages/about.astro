@@ -1,96 +1,213 @@
 ---
 import BaseLayout from '../components/layout/BaseLayout.astro';
+import { getVisibleNotes } from '../lib/notes';
+import { tools } from '../lib/tools/registry';
+
+const notes = await getVisibleNotes();
+const tagCount = new Set(notes.flatMap((n) => n.data.tags)).size;
+
+const dirs = [
+  { href: '/', name: 'notes/', note: `${notes.length} 篇笔记,按时间倒序` },
+  { href: '/tools/', name: 'tools/', note: `${tools.length} 个小工具,纯浏览器运行` },
+  { href: '/tags/', name: 'tags/', note: `${tagCount} 个标签` },
+  { href: '/search/', name: 'search/', note: '全文搜索笔记和工具' },
+  { href: '/rss.xml', name: 'rss.xml', note: '订阅更新' },
+];
+
+const stack = [
+  ['build', 'Astro 静态生成,默认零 JS'],
+  ['content', 'Markdown + Git,提交即发布'],
+  ['deploy', 'GitHub Actions → 自己的服务器'],
+  ['tools', '逻辑与界面分离,Vitest 单测'],
+  ['backend', 'none'],
+];
 ---
 
 <BaseLayout title="关于" description="关于 Cube007 与这个站点。">
-  <section class="about">
-    <p class="about__eyebrow">About</p>
-    <h1 class="about__title">关于 Cube007</h1>
-    <p class="about__lead">
+  <section class="page-head">
+    <p class="eyebrow">About</p>
+    <h1 class="page-title">关于 <span class="flow-text">Cube007</span></h1>
+    <p class="page-sub">
       这里是我的学习笔记与开发小工具站。内容围绕编程、后端和 AI,工具都是纯前端、打开即用。
     </p>
-
-    <div class="about__grid">
-      <article class="about__card">
-        <h2>这个站是什么</h2>
-        <p>
-          一个纯静态个人站:Markdown 写笔记,Git 即发布,GitHub Actions 自动部署到自己的服务器。
-          不追求大而全,只把日常真正会用到的东西放进来。任意页面按 <kbd>/</kbd> 或 Ctrl/⌘ K 可快捷搜索笔记和工具。
-        </p>
-      </article>
-      <article class="about__card">
-        <h2>技术选择</h2>
-        <ul>
-          <li>Astro 静态生成,默认零 JS</li>
-          <li>工具逻辑与界面分离,Vitest 单测</li>
-          <li>暗色流光视觉,设计 token 单点定义</li>
-        </ul>
-      </article>
-      <article class="about__card">
-        <h2>入口</h2>
-        <ul>
-          <li><a href="/">笔记时间流</a></li>
-          <li><a href="/tools/">开发小工具</a></li>
-          <li><a href="/search/">搜索笔记</a></li>
-          <li><a href="/rss.xml">RSS 订阅</a></li>
-          <li><a href="https://github.com/xCube007/cube007.cn" target="_blank" rel="noreferrer">GitHub 仓库</a></li>
-        </ul>
-      </article>
-    </div>
   </section>
+
+  <div class="term">
+    <div class="term__bar" aria-hidden="true">
+      <span class="term__title">cube007@site: ~</span>
+    </div>
+    <div class="term__body">
+      <p class="cmd" style="--i: 0">whoami</p>
+      <p class="out" style="--i: 1">
+        cube007 <span class="dim"># 写代码,学后端和 AI,顺手做点日常用得上的小工具</span>
+      </p>
+
+      <p class="cmd" style="--i: 2">cat about.txt</p>
+      <p class="out" style="--i: 3">
+        一个纯静态个人站。Markdown 写笔记,Git 即发布,GitHub Actions 自动部署到自己的服务器。
+        不追求大而全,只把日常真正会用到的东西放进来。
+      </p>
+
+      <p class="cmd" style="--i: 4">ls -l ~/site</p>
+      <ul class="out ls" style="--i: 5">
+        {
+          dirs.map((d) => (
+            <li>
+              <a href={d.href}>{d.name}</a>
+              <span class="dim">{d.note}</span>
+            </li>
+          ))
+        }
+      </ul>
+
+      <p class="cmd" style="--i: 6">cat stack.yml</p>
+      <dl class="out kv" style="--i: 7">
+        {
+          stack.map(([k, v]) => (
+            <div>
+              <dt>{k}:</dt>
+              <dd>{v}</dd>
+            </div>
+          ))
+        }
+      </dl>
+
+      <p class="cmd" style="--i: 8">help</p>
+      <p class="out" style="--i: 9">
+        任意页面按 <kbd>/</kbd> 或 <kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd> 快速搜索笔记和工具。
+        源码在 <a href="https://github.com/xCube007/cube007.cn" target="_blank" rel="noreferrer">GitHub</a>。
+      </p>
+
+      <p class="cmd cmd--live" style="--i: 10" aria-hidden="true"><span class="caret"></span></p>
+    </div>
+  </div>
 </BaseLayout>
 
 <style>
-  .about {
-    max-width: 48rem;
-  }
-  .about__eyebrow {
-    color: var(--accent);
-    font-family: var(--font-mono);
-    font-size: var(--fs-sm);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: var(--sp-3);
-  }
-  .about__title {
-    font-size: var(--fs-3xl);
-    margin-bottom: var(--sp-4);
-  }
-  .about__lead {
-    color: var(--text-1);
-    font-size: var(--fs-lg);
-    margin-bottom: var(--sp-8);
-    max-width: 40rem;
-  }
-  .about__grid {
-    display: grid;
-    gap: var(--sp-4);
-  }
-  .about__card {
-    padding: var(--sp-6);
+  .term {
+    max-width: 52rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    background: var(--bg-1);
+    background: color-mix(in srgb, var(--bg-1) 88%, transparent);
+    box-shadow:
+      0 24px 60px -24px color-mix(in srgb, var(--accent) 35%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--accent-2) 8%, transparent);
+    overflow: hidden;
   }
-  .about__card h2 {
-    font-size: var(--fs-lg);
-    margin-bottom: var(--sp-3);
+
+  /* 标题栏:三个圆点 + 居中的窗口名,和文章页代码块同一套 */
+  .term__bar {
+    position: relative;
+    height: 2.4rem;
+    border-bottom: 1px solid var(--border);
+    background:
+      radial-gradient(circle at 1.1rem 50%, var(--err) 0 5px, transparent 5.5px),
+      radial-gradient(circle at 1.9rem 50%, var(--warn) 0 5px, transparent 5.5px),
+      radial-gradient(circle at 2.7rem 50%, var(--ok) 0 5px, transparent 5.5px),
+      var(--bg-2);
   }
-  .about__card p,
-  .about__card li {
-    color: var(--text-1);
-  }
-  .about__card ul {
-    list-style: none;
+  .term__title {
+    position: absolute;
+    inset: 0;
     display: grid;
-    gap: var(--sp-2);
-  }
-  kbd {
+    place-items: center;
+    color: var(--text-2);
     font-family: var(--font-mono);
     font-size: var(--fs-xs);
-    padding: 0.1rem 0.35rem;
-    border: 1px solid var(--border-strong);
-    border-radius: 4px;
+  }
+
+  .term__body {
+    padding: var(--sp-6) var(--sp-8) var(--sp-8);
+    font-size: var(--fs-sm);
+    line-height: 1.85;
+  }
+
+  /* 逐行浮现;降低动效偏好下 global.css 会把动画压到瞬间完成 */
+  .cmd,
+  .out {
+    animation: line-in 0.35s ease-out both;
+    animation-delay: calc(var(--i) * 110ms);
+  }
+  @keyframes line-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+
+  .cmd {
     color: var(--text-0);
+    font-family: var(--font-mono);
+  }
+  .cmd::before {
+    content: '$ ';
+    color: var(--accent);
+  }
+  .cmd:not(:first-child) {
+    margin-top: var(--sp-5);
+  }
+  .out {
+    color: var(--text-1);
+  }
+  .dim {
+    color: var(--text-2);
+  }
+
+  .ls {
+    list-style: none;
+    display: grid;
+    gap: var(--sp-1);
+  }
+  .ls li {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    gap: var(--sp-4);
+  }
+  .ls a {
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+  .ls a:hover {
+    color: var(--accent-3);
+    text-shadow: 0 0 12px currentColor;
+  }
+
+  .kv {
+    display: grid;
+    gap: var(--sp-1);
+  }
+  .kv div {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    gap: var(--sp-4);
+  }
+  .kv dt {
+    color: var(--accent-2);
+    font-family: var(--font-mono);
+  }
+
+  .caret {
+    display: inline-block;
+    width: 0.6em;
+    height: 1.1em;
+    vertical-align: text-bottom;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+    animation: pulse-dot 1.1s steps(1) infinite;
+  }
+
+  @media (max-width: 600px) {
+    .term__body {
+      padding: var(--sp-5) var(--sp-4) var(--sp-6);
+    }
+    .ls li,
+    .kv div {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .ls li + li,
+    .kv div + div {
+      margin-top: var(--sp-2);
+    }
   }
 </style>

@@ -15,16 +15,17 @@ const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
 ---
 
 <BaseLayout title="标签" description="按标签浏览所有笔记。">
-  <section class="head">
-    <a href="/" class="back">← 回笔记流</a>
-    <h1 class="title">标签</h1>
-    <p class="sub">共 {tags.length} 个标签,{notes.length} 篇笔记。</p>
+  <section class="page-head">
+    <a href="/" class="back-link">← cd ~/notes</a>
+    <p class="eyebrow">Tags</p>
+    <h1 class="page-title"><span class="flow-text">标签</span></h1>
+    <p class="page-sub">共 {tags.length} 个标签,{notes.length} 篇笔记。</p>
   </section>
 
   <ul class="tag-list">
     {
       tags.map(([tag, count]) => (
-        <li>
+        <li class="reveal">
           <TagChip name={tag} count={count} href={`/tags/${tag}/`} />
         </li>
       ))
@@ -33,11 +34,6 @@ const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
 </BaseLayout>
 
 <style>
-  .head { margin-bottom: var(--sp-8); }
-  .back { color: var(--text-2); font-size: var(--fs-sm); }
-  .title { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); }
-  .sub { color: var(--text-1); }
-
   .tag-list {
     list-style: none;
     display: flex;

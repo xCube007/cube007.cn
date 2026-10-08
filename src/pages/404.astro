@@ -10,7 +10,7 @@ import BaseLayout from '../components/layout/BaseLayout.astro';
       链接可能写错了,或者页面已经搬走。回首页继续看笔记和工具。
     </p>
     <div class="not-found__actions">
-      <a class="btn" href="/">回首页</a>
+      <a class="btn btn--primary" href="/">回首页</a>
       <a class="btn btn--ghost" href="/tools/">看工具</a>
       <a class="btn btn--ghost" href="/tags/">看标签</a>
     </div>
@@ -45,25 +45,5 @@ import BaseLayout from '../components/layout/BaseLayout.astro';
     display: flex;
     flex-wrap: wrap;
     gap: var(--sp-3);
-  }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--sp-2) var(--sp-4);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-strong);
-    background: var(--bg-1);
-    color: var(--text-0);
-    font-size: var(--fs-sm);
-    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-  }
-  .btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-  .btn--ghost {
-    background: transparent;
-    color: var(--text-1);
   }
 </style>

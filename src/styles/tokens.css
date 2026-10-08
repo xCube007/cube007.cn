@@ -6,25 +6,26 @@
      1. src/styles/global.css(@import,由 Astro 打包进前台页面)
      2. public/admin/tokens.css(构建前由 scripts/sync-admin-theme.mjs 生成)
    所以改这里就等于同时改了前台和写作后台,两边不会漂移。
+   后台 public/admin/index.html 直接引用这里的变量名 —— 只改值,别改名。
    ========================================================================== */
 
 :root {
-  /* ---- 色板:暗色基底 ---- */
-  --bg-0: #07080c;          /* 最底层背景,近黑 */
-  --bg-1: #0d0f17;          /* 卡片/分块背景 */
-  --bg-2: #141826;          /* 输入框/代码块背景 */
-  --border: #1f2435;        /* 描边 */
-  --border-strong: #2a3048; /* hover / 强调描边 */
+  /* ---- 色板:蓝黑基底 ---- */
+  --bg-0: #05060a;          /* 最底层背景 */
+  --bg-1: #0b0d14;          /* 卡片/分块背景 */
+  --bg-2: #121522;          /* 输入框/代码块背景 */
+  --border: #1c2133;        /* 描边 */
+  --border-strong: #2b3250; /* hover / 强调描边 */
 
   /* ---- 文字色阶 ---- */
-  --text-0: #e8ecf5;        /* 主文字,高对比 */
-  --text-1: #a8b0c4;        /* 次级文字 */
-  --text-2: #6b7390;        /* 弱化文字/占位 */
+  --text-0: #eef1fa;        /* 主文字,高对比 */
+  --text-1: #b2b9cf;        /* 次级文字 */
+  --text-2: #737c99;        /* 弱化文字/占位 */
 
-  /* ---- 强调色(单一流光主色) ---- */
-  --accent: #6d8bff;        /* 流光主色,冷蓝 */
-  --accent-2: #b06dff;      /* 流光副色,紫 */
-  --accent-3: #5ff0e0;      /* 流光点缀,青 */
+  /* ---- 霓虹三色 ---- */
+  --accent: #22d3ee;        /* 电光青,主色 */
+  --accent-2: #818cf8;      /* 靛紫 */
+  --accent-3: #e879f9;      /* 品红 */
 
   /* ---- 状态色 ---- */
   --ok: #4ade80;
@@ -35,36 +36,47 @@
   --diff-left: color-mix(in srgb, var(--err) 35%, transparent);
   --diff-right: color-mix(in srgb, var(--ok) 32%, transparent);
 
-  /* ---- 流光定义(用于描边/标题) ---- */
+  /* ---- 流光:标题、描边、按钮、进度条 ---- */
   --flow: linear-gradient(
     100deg,
     var(--accent) 0%,
-    var(--accent-2) 45%,
+    var(--accent-2) 50%,
     var(--accent-3) 100%
   );
+  /* 旋转描边用,角度由 --angle 驱动 */
+  --flow-conic: conic-gradient(
+    from var(--angle),
+    var(--accent),
+    var(--accent-2),
+    var(--accent-3),
+    var(--accent-2),
+    var(--accent)
+  );
+  --neon-glow: 0 0 24px color-mix(in srgb, var(--accent) 35%, transparent),
+    0 0 64px color-mix(in srgb, var(--accent-2) 20%, transparent);
 
-  /* ---- 页面光晕:极淡的渐变制造层次,前台与后台登录页共用 ---- */
+  /* ---- 页面光晕:前台与后台登录页共用 ---- */
   --glow: radial-gradient(
-      1200px 600px at 80% -10%,
-      color-mix(in srgb, var(--accent) 16%, transparent),
+      1100px 560px at 85% -10%,
+      color-mix(in srgb, var(--accent-2) 18%, transparent),
       transparent 62%
     ),
     radial-gradient(
-      900px 500px at 0% 0%,
-      color-mix(in srgb, var(--accent-2) 12%, transparent),
+      900px 520px at 0% 0%,
+      color-mix(in srgb, var(--accent) 12%, transparent),
       transparent 58%
     );
 
-  /* ---- 背景网格:给近黑底一点纵深,淡到几乎只在余光里存在 ---- */
-  --grid-size: 34px;
-  --grid-line: color-mix(in srgb, var(--accent) 6%, transparent);
+  /* ---- 背景网格 ---- */
+  --grid-size: 40px;
+  --grid-line: color-mix(in srgb, var(--accent-2) 8%, transparent);
   --grid: linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
     linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
 
   /* ---- 卡片光标高光:hover 时跟随鼠标的一团光 ---- */
   --spotlight: radial-gradient(
-    260px circle at var(--mx, 50%) var(--my, 0%),
-    color-mix(in srgb, var(--accent) 14%, transparent),
+    320px circle at var(--mx, 50%) var(--my, 0%),
+    color-mix(in srgb, var(--accent) 16%, transparent),
     transparent 62%
   );
 
@@ -74,23 +86,25 @@
   --fs-base: 1rem;
   --fs-lg: 1.125rem;
   --fs-xl: 1.375rem;
-  --fs-2xl: 1.75rem;
-  --fs-3xl: 2.5rem;
+  --fs-2xl: 1.875rem;
+  --fs-3xl: 2.75rem;
 
   /* ---- 间距 ---- */
   --sp-1: 0.25rem;
   --sp-2: 0.5rem;
   --sp-3: 0.75rem;
   --sp-4: 1rem;
+  --sp-5: 1.25rem;
   --sp-6: 1.5rem;
   --sp-8: 2rem;
+  --sp-10: 2.5rem;
   --sp-12: 3rem;
   --sp-20: 5rem;
 
   /* ---- 圆角 / 阴影 ---- */
-  --radius: 10px;
-  --radius-sm: 6px;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.25);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 32px rgba(0, 0, 0, 0.4);
 
   /* ---- 标签芯片:统一高度,不按笔记数缩放;中英文混排也对齐 ---- */
   --tag-h: 2rem;
@@ -101,42 +115,72 @@
 
   /* ---- 版式 ---- */
   --content-w: 720px;
-  --wide-w: 1080px;
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", "PingFang SC",
-    "Microsoft YaHei", sans-serif;
-  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, "Cascadia Code",
-    Consolas, monospace;
+  --wide-w: 1160px;
+  /* 系统字体:国内访问 Google Fonts 很慢,而且 Inter 对中文没用 */
+  --font-sans: system-ui, -apple-system, "Segoe UI", "PingFang SC",
+    "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei", "Noto Sans CJK SC",
+    sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", "Fira Code", ui-monospace,
+    "SF Mono", Consolas, monospace;
 
   /* ---- 可读性辅助 ---- */
-  --sp-5: 1.25rem;
-  --sp-10: 2.5rem;
-  --focus-ring: 0 0 0 3px rgba(109, 139, 255, 0.18);
-  --mark: color-mix(in srgb, var(--accent) 32%, transparent);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+  --mark: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* 旋转描边的角度。注册成 <angle> 才能被 keyframes 插值 */
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
 }
 
 /* ============================================================================
-   流光动画 —— 和 token 放一起,后台登录页才能共用同一份定义
+   动画 —— 和 token 放一起,后台登录页才能共用同一份定义
    ========================================================================== */
 
-/* 流光描边:卡片 hover 时边框流光 */
+/* 流光描边/文字:背景位置平移 */
 @keyframes flow-border {
   0% { background-position: 0% 50%; }
   100% { background-position: 200% 50%; }
 }
 
-/* 流光文字:站名标题 */
 @keyframes flow-text {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
 
-/* 流光线条呼吸:首页 hero 下的分隔光带 */
-@keyframes flow-line {
-  0%, 100% { opacity: 0.5; transform: scaleX(0.9); }
-  50% { opacity: 1; transform: scaleX(1); }
+/* 旋转描边:conic 渐变绕一圈 */
+@keyframes spin-border {
+  to { --angle: 360deg; }
 }
 
-/* 指示灯呼吸:首页 eyebrow 前的小圆点 */
+/* 极光光斑漂移 */
+@keyframes aurora {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(6%, -8%) scale(1.15); }
+  66% { transform: translate(-6%, 6%) scale(0.92); }
+}
+
+/* 透视网格向前滚动,位移量必须等于一格 */
+@keyframes grid-scroll {
+  to { background-position: 0 var(--grid-size); }
+}
+
+/* 终端打字 + 光标闪烁 */
+@keyframes typing {
+  from { width: 0; }
+}
+@keyframes caret {
+  50% { border-color: transparent; }
+}
+
+/* 进入视口时上浮 */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(24px); }
+}
+
+/* 指示灯呼吸 */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
