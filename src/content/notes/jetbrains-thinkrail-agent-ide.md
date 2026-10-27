@@ -6,7 +6,7 @@ description: 'ThinkRail 是 JetBrains 开源的 Agent IDE：以 pi 为引擎，�
 draft: false
 ---
 
-最近 JetBrains 开源了一个新的 Agent IDE：**ThinkRail**。它不是在现有 IDE 里再放一个 AI 聊天侧栏，而是把「并行任务、代码审查、项目知识」放到了产品中心。
+2026 年 8 月，JetBrains 公开介绍了一个新的 Agent IDE：**ThinkRail**。它不是在现有 IDE 里再放一个 AI 聊天侧栏，而是把「并行任务、代码审查、项目知识」放到了产品中心。
 
 这篇是基于官方仓库与产品文档的桌面调研，不是深度实测。资料截至 **2026-10-27**；项目仍在快速迭代，具体能力以最新文档为准。
 
@@ -61,7 +61,7 @@ JetBrains 同时有 [JetBrains Air](https://blog.jetbrains.com/zh-hans/blog/2026
 
 ThinkRail 提供桌面安装包和 CLI。CLI 依赖 Git，并需要模型供应商：可以登录 JetBrains AI，也可以通过 `pi` 配置其他供应商凭据；ThinkRail 本身没有独立账号体系。界面已内置简体中文，但 Agent 回复和工具输出不会被界面翻译功能自动翻译。
 
-截至本文调研时，GitHub Releases 的最新版本是 **v0.2.0（2026-10-18 发布）**，仓库也标注为 JetBrains incubator 项目。因此，我不会把它描述成已经完全成熟的 IntelliJ 替代品。早期版本、快速变化的界面和工作流，都意味着试用前应保留可回退路径。
+截至本文调研时，GitHub Releases 的最新稳定版是 **v0.2.0（2026-10-18 发布）**，另有更新的 nightly 预发布版；仓库也标注为 JetBrains incubator 项目。因此，我不会把它描述成已经完全成熟的 IntelliJ 替代品。早期版本、快速变化的界面和工作流，都意味着试用前应保留可回退路径。
 
 另外，官方 README 说明会收集与随机安装 ID 关联的基本使用事件，并始终发送不包含项目内容的错误报告；额外的产品使用数据由隐私开关控制。用于企业项目之前，应该按实际版本检查隐私设置、组织的数据合规要求，以及所选模型供应商的数据路径。不要仅凭「开源」就推断所有处理都在本地完成。
 
@@ -75,6 +75,7 @@ ThinkRail 最有价值的地方，不是「Agent 也能写代码」，而是它�
 
 ## 参考资料
 
+- [Introducing ThinkRail](https://thinkrail.ai/blog/introducing-thinkrail/)（2026-08-19）：官方首次介绍。
 - [JetBrains/thinkrail 官方仓库与 README](https://github.com/JetBrains/thinkrail)：功能、安装、隐私与技术架构。
 - [ThinkRail 产品目标与范围](https://github.com/JetBrains/thinkrail/blob/main/goal-and-requirements.md)：目标用户、设计原则及非目标。
 - [ThinkRail Releases](https://github.com/JetBrains/thinkrail/releases)：安装包与版本记录。
