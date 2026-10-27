@@ -1,5 +1,5 @@
 ---
-title: 'JetBrains ThinkRail 调研：把 Agent 开发装进 IDE，而不只是加个聊天框'
+title: 'ThinkRail：JetBrains 如何把 Agent 开发从聊天框带回工程现场'
 date: 2026-10-27
 tags: ['AI', 'Agent', '开发工具']
 description: 'ThinkRail 是 JetBrains 开源的 Agent IDE：以 pi 为引擎，用 worktree 隔离任务，以 Specs 保存项目知识。本文梳理它的工作流、架构与现阶段的适用边界。'
